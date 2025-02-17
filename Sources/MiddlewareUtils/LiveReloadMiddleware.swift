@@ -1,7 +1,7 @@
 #if DEBUG
-  import Dependencies
   import Hummingbird
   import NIOFoundationCompat
+  import Clocks
 
   private let clock = ContinuousClock()
 

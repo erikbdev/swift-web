@@ -14,7 +14,8 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.4.0"),
     .package(url: "https://github.com/hummingbird-project/hummingbird.git", exact: "2.5.0"),
-    .package(url: "https://github.com/pointfreeco/swift-url-routing.git", exact: "0.6.2")
+    .package(url: "https://github.com/pointfreeco/swift-url-routing.git", exact: "0.6.2"),
+    .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6")
   ],
   targets: [
     .executableTarget(
@@ -41,7 +42,8 @@ let package = Package(
     .target(
       name: "MiddlewareUtils",
       dependencies: [
-        .product(name: "Hummingbird", package: "hummingbird")
+        .product(name: "Hummingbird", package: "hummingbird"),
+        .product(name: "Clocks", package: "swift-clocks")
       ],
       resources: [.embedInCode("Resources")]
     )
