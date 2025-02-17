@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:swift-web}",
+      "name": "Debug TypedAssetsCLI",
+      "program": "${workspaceFolder:swift-web}/.build/debug/TypedAssetsCLI",
+      "preLaunchTask": "swift: Build Debug TypedAssetsCLI"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:swift-web}",
+      "name": "Release TypedAssetsCLI",
+      "program": "${workspaceFolder:swift-web}/.build/release/TypedAssetsCLI",
+      "preLaunchTask": "swift: Build Release TypedAssetsCLI"
+    }
+  ]
+}
