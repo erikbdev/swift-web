@@ -114,7 +114,7 @@ struct TypedAssetsCLI: ParsableCommand {
         switch type {
           case .unknown:
           """
-          public var `\(canonical.camelCase())`: AnyFile {
+          public var `\(canonical.camelCase() + (ext?.pascalCase() ?? ""))`: AnyFile {
             .init(
               name: "\(canonical)", 
               ext: \(ext.flatMap { "\"\($0)\"" } ?? "nil"),
@@ -124,7 +124,7 @@ struct TypedAssetsCLI: ParsableCommand {
           """
           case .image(let width, let height):
           """
-          public var `\(canonical.camelCase())`: ImageFile {
+          public var `\(canonical.camelCase() + (ext?.pascalCase() ?? ""))`: ImageFile {
             .init(
               name: "\(canonical)", 
               ext: \(ext.flatMap { "\"\($0)\"" } ?? "nil"),
@@ -136,7 +136,7 @@ struct TypedAssetsCLI: ParsableCommand {
           """
           case let .video(width, height, mime):
           """
-          public var `\(canonical.camelCase())`: VideoFile {
+          public var `\(canonical.camelCase() + (ext?.pascalCase() ?? ""))`: VideoFile {
             .init(
               name: "\(canonical)", 
               ext: \(ext.flatMap { "\"\($0)\"" } ?? "nil"),
