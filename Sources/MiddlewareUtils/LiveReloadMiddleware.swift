@@ -1,17 +1,23 @@
 #if DEBUG
+  import Clocks
   import Hummingbird
   import NIOFoundationCompat
-  import Clocks
 
   private let clock = ContinuousClock()
 
-  struct ReloadBrowserMiddleware<Context: RequestContext>: RouterMiddleware {
-    func handle(
+  public struct LiveReloadMiddleware<Context: RequestContext>: RouterMiddleware {
+    private let path: String
+
+    public init(_ path: String = "/live-reload") {
+      self.path = path
+    }
+
+    public func handle(
       _ request: Input,
       context: Context,
       next: (Input, Context) async throws -> Output
     ) async throws -> Output {
-      guard request.uri.path != "/live-reload" else {
+      if request.uri.path == path {
         return Response(
           status: .ok,
           headers: [
@@ -26,43 +32,43 @@
             try await writer.finish(nil)
           }
         )
-      }
+      } else {
+        var handled = try await next(request, context)
 
-      var handled = try await next(request, context)
+        if let content = handled.headers[.contentType], content.contains("text/html") {
+          let modifiedBuffer = handled.body.map { buffer in
+            let bufferView = buffer.readableBytesView
 
-      if let content = handled.headers[.contentType], content.contains("text/html") {
-        let modifiedBuffer = handled.body.map { buffer in
-          let bufferView = buffer.readableBytesView
+            guard let range = bufferView.firstRange(of: __headEndTag) else {
+              return buffer
+            }
 
-          guard let range = bufferView.firstRange(of: __headEndTag) else {
+            let beforeSlice = buffer.getSlice(at: bufferView.startIndex, length: range.lowerBound)
+            let afterSlice = buffer.getSlice(
+              at: range.lowerBound,
+              length: bufferView.count - range.lowerBound
+            )
+
+            var buffer = buffer
+            buffer.clear()
+
+            if let beforeSlice {
+              buffer.writeImmutableBuffer(beforeSlice)
+            }
+
+            buffer.writeBytes(PackageResources.liveServerSnippet_html)
+
+            if let afterSlice {
+              buffer.writeImmutableBuffer(afterSlice)
+            }
+
             return buffer
           }
 
-          let beforeSlice = buffer.getSlice(at: bufferView.startIndex, length: range.lowerBound)
-          let afterSlice = buffer.getSlice(
-            at: range.lowerBound,
-            length: bufferView.count - range.lowerBound
-          )
-
-          var buffer = buffer
-          buffer.clear()
-
-          if let beforeSlice {
-            buffer.writeImmutableBuffer(beforeSlice)
-          }
-
-          buffer.writeBytes(PackageResources.liveServerSnippet_html)
-
-          if let afterSlice {
-            buffer.writeImmutableBuffer(afterSlice)
-          }
-
-          return buffer
+          handled.body = modifiedBuffer
         }
-
-        handled.body = modifiedBuffer
+        return handled
       }
-      return handled
     }
   }
 
