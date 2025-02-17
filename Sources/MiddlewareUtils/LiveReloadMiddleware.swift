@@ -3,8 +3,9 @@
   import Hummingbird
   import NIOFoundationCompat
 
+  private let clock = ContinuousClock()
+
   struct ReloadBrowserMiddleware<Context: RequestContext>: RouterMiddleware {
-    private static let clock = ContinuousClock()
     func handle(
       _ request: Input,
       context: Context,
@@ -19,7 +20,7 @@
             .connection: "keep-alive",
           ],
           body: .init { writer in
-            for await _ in Self.clock.timer(interval: .seconds(1)).cancelOnGracefulShutdown() {
+            for await _ in clock.timer(interval: .seconds(1)).cancelOnGracefulShutdown() {
               try await writer.write(ByteBuffer(string: "data: heartbeat\n\n"))
             }
             try await writer.finish(nil)
