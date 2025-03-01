@@ -1,5 +1,5 @@
 {
-  "originHash" : "a819d2ddfb7af428757ab8bfd0c30a5b0d02ffcc2f3603dbba7df3028efe6a16",
+  "originHash" : "3271a6c0af97527f860212f8f873581d80e501698306f978536038a86b00a5a1",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -8,6 +8,24 @@
       "state" : {
         "revision" : "b645ad40822b5c59ac92b758c5c17af054b5b01f",
         "version" : "1.25.1"
+      }
+    },
+    {
+      "identity" : "combine-schedulers",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/combine-schedulers",
+      "state" : {
+        "revision" : "5928286acce13def418ec36d05a001a9641086f2",
+        "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "elementary",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sliemeobn/elementary.git",
+      "state" : {
+        "revision" : "b307b6b79d7cd5651763de1d0016660a106ed4e3",
+        "version" : "0.4.6"
       }
     },
     {
@@ -92,6 +110,24 @@
       }
     },
     {
+      "identity" : "swift-custom-dump",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-custom-dump",
+      "state" : {
+        "revision" : "82645ec760917961cfa08c9c0c7104a57a0fa4b1",
+        "version" : "1.3.3"
+      }
+    },
+    {
+      "identity" : "swift-dependencies",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-dependencies.git",
+      "state" : {
+        "revision" : "121a428c505c01c4ce02d5ada1c8fc3da93afce9",
+        "version" : "1.8.0"
+      }
+    },
+    {
       "identity" : "swift-distributed-tracing",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-distributed-tracing.git",
@@ -116,6 +152,15 @@
       "state" : {
         "revision" : "96a2f8a0fa41e9e09af4585e2724c4e825410b91",
         "version" : "1.6.2"
+      }
+    },
+    {
+      "identity" : "swift-macro-testing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-macro-testing.git",
+      "state" : {
+        "revision" : "0b80a098d4805a21c412b65f01ffde7b01aab2fa",
+        "version" : "0.6.0"
       }
     },
     {
@@ -206,6 +251,15 @@
       "state" : {
         "revision" : "c2e97cf6f81510f2d6b4a69453861db65d478560",
         "version" : "2.6.3"
+      }
+    },
+    {
+      "identity" : "swift-snapshot-testing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
+      "state" : {
+        "revision" : "b2d4cb30735f4fbc3a01963a9c658336dd21e9ba",
+        "version" : "1.18.1"
       }
     },
     {
