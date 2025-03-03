@@ -1,6 +1,4 @@
 extension Optional: HTML where Wrapped: HTML {
-  public var body: Never { fatalError() }
-
   @_spi(Render) @inlinable @inline(__always)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self, 
@@ -11,4 +9,6 @@ extension Optional: HTML where Wrapped: HTML {
       case .none: break
     }
   }
+
+  public var body: Never { fatalError() }
 }

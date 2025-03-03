@@ -1,8 +1,6 @@
 public struct HTMLTuple<each Content: HTML>: HTML {
   let content: (repeat each Content)
 
-  public var body: Never { fatalError() }
-
   @inline(__always)
   public init(_ content: repeat each Content) {
     self.content = (repeat each content)
@@ -19,4 +17,6 @@ public struct HTMLTuple<each Content: HTML>: HTML {
 
     repeat render(each html.content)
   }
+
+  public var body: Never { fatalError() }
 }

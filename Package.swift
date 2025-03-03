@@ -16,13 +16,14 @@ let package = Package(
     .library(name: "MiddlewareUtils", targets: ["MiddlewareUtils"])
   ],
   dependencies: [
-    .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.1"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.4.0"),
+    .package(url: "https://github.com/apple/swift-collections.git", from: "1.1.4"),
     .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.5.0"),
-    .package(url: "https://github.com/pointfreeco/swift-url-routing.git", from: "0.6.0"),
     .package(url: "https://github.com/pointfreeco/swift-clocks.git", from: "1.0.6"),
     .package(url: "https://github.com/pointfreeco/swift-dependencies.git", from: "1.5.0"),
     .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.0"),
+    .package(url: "https://github.com/pointfreeco/swift-url-routing.git", from: "0.6.0"),
+    .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.1"),
     .package(url: "https://github.com/sliemeobn/elementary.git", from: "0.4.0")
   ],
   targets: [
@@ -90,6 +91,7 @@ let package = Package(
     .target(
       name: "HTML",
       dependencies: [
+        .product(name: "OrderedCollections", package: "swift-collections"),
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "DependenciesMacros", package: "swift-dependencies")
       ]

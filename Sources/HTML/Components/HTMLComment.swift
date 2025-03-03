@@ -1,8 +1,6 @@
 public struct HTMLComment: HTML {
   let bytes: ContiguousArray<UInt8>
 
-  public var body: Never { fatalError() }
-
   @inlinable @inline(__always)
   public init(_ comment: consuming String) {
     self.init(comment.utf8)
@@ -22,4 +20,6 @@ public struct HTMLComment: HTML {
     HTMLString._render(HTMLString(html.bytes, escape: true), into: &output)  // comment
     output.write([0x2D, 0x2D, 0x3E])        // -->
   }
+
+  public var body: Never { fatalError() }
 }

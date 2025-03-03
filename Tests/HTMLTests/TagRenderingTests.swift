@@ -4,18 +4,18 @@ import HTML
 @Suite("Tag rendering tests")
 struct TagRenderingTests {
   @Test func rendersEmptyTag() {
-    #expect(p {}.render() == "<p></p>") 
+    #expect(p {} == "<p></p>") 
   }
 
   @Test func rendersNestedTags() {
     #expect(
-      div { p {} }.render() == "<div><p></p></div>"
+      div { p {} } == "<div><p></p></div>"
     )
   }
 
   @Test func rendersSelfClosingTags() {
     #expect(
-      meta().render() == "<meta>"
+      meta() == "<meta>"
     )
   }
 

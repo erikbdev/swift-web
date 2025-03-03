@@ -1,27 +1,5 @@
 public struct HTMLString: HTML, ExpressibleByStringLiteral, ExpressibleByStringInterpolation {
-  internal struct Value {
-    let element: Element
-    let escape: Bool
-
-    init<S: Sequence<UInt8>>(_ bytes: S, escape: Bool) {
-      self.element = .bytes(ContiguousArray(bytes)) 
-      self.escape = escape
-    }
-
-    init<T: HTML>(_ html: T, escape: Bool) {
-      self.element = .html(AnyHTML(html))
-      self.escape = escape
-    }
-
-    enum Element {
-      case bytes(ContiguousArray<UInt8>)
-      case html(AnyHTML)
-    }
-  }
-
   internal var _storage: [Value]
-
-  public var body: Never { fatalError() }
 
   @inlinable @inline(__always)
   public init(stringLiteral value: consuming String) {
@@ -82,6 +60,30 @@ public struct HTMLString: HTML, ExpressibleByStringLiteral, ExpressibleByStringI
             AnyHTML._render(html, into: &proxy)
           }
       }
+    }
+  }
+
+  public var body: Never { fatalError() }
+}
+
+extension HTMLString {
+  internal struct Value {
+    let element: Element
+    let escape: Bool
+
+    init<S: Sequence<UInt8>>(_ bytes: S, escape: Bool) {
+      self.element = .bytes(ContiguousArray(bytes)) 
+      self.escape = escape
+    }
+
+    init<T: HTML>(_ html: T, escape: Bool) {
+      self.element = .html(AnyHTML(html))
+      self.escape = escape
+    }
+
+    enum Element {
+      case bytes(ContiguousArray<UInt8>)
+      case html(AnyHTML)
     }
   }
 
