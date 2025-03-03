@@ -1,3 +1,5 @@
+import OrderedCollections
+
 public struct HTMLTag: ExpressibleByStringLiteral {
   public let rawValue: String
 
@@ -12,20 +14,23 @@ public struct HTMLTag: ExpressibleByStringLiteral {
   }
 
   @inlinable @inline(__always)
-  public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLElement<EmptyHTML> {
+  public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
     self.callAsFunction([])
   }
 
   @inlinable @inline(__always)
-  public func callAsFunction(_ attributes: [HTMLAttribute]) -> HTMLElement<EmptyHTML> {
-    HTMLElement(tag: rawValue, content: EmptyHTML.init)
+  public func callAsFunction(_ attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
+    HTMLAttributes(
+      content: HTMLElement(tag: rawValue, content: EmptyHTML.init), 
+      attributes: .init(attributes)
+    )
   }
 
   @inlinable @inline(__always)
   public func callAsFunction<Content: HTML>(
     _ attributes: HTMLAttribute...,
     @HTMLBuilder content: @escaping () -> Content
-  ) -> HTMLElement<Content> {
+  ) -> HTMLAttributes<HTMLElement<Content>> {
     self.callAsFunction(attributes, content: content)
   }
 
@@ -33,8 +38,11 @@ public struct HTMLTag: ExpressibleByStringLiteral {
   public func callAsFunction<Content: HTML>(
     _ attributes: [HTMLAttribute],
     @HTMLBuilder content: @escaping () -> Content
-  ) -> HTMLElement<Content> {
-    HTMLElement(tag: rawValue, content: content)
+  ) -> HTMLAttributes<HTMLElement<Content>> {
+    HTMLAttributes(
+      content: HTMLElement(tag: rawValue, content: content), 
+      attributes: .init(attributes)
+    )
   }
 }
 
@@ -52,13 +60,16 @@ public struct HTMLVoidTag: ExpressibleByStringLiteral {
   }
 
   @inlinable @inline(__always)
-  public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLVoidElement {
+  public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLAttributes<HTMLVoidElement> {
     self.callAsFunction(attributes)
   }
 
   @inlinable @inline(__always)
-  public func callAsFunction(_ attributes: [HTMLAttribute]) -> HTMLVoidElement {
-    HTMLVoidElement(tag: self.rawValue)
+  public func callAsFunction(_ attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLVoidElement> {
+    HTMLAttributes(
+      content: HTMLVoidElement(tag: rawValue), 
+      attributes: .init(attributes)
+    )
   }
 }
 

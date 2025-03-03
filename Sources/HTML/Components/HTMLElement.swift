@@ -46,6 +46,7 @@ public struct HTMLVoidElement: HTML {
     into output: inout Output
   ) {
     @Dependency(\.allAttributes) var allAttributes
+    // @Dependency(\.htmlContext) var context
 
     output.write(0x3C)  // <
     output.write(html.tag.utf8)  // tag-name

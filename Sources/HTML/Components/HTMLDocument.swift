@@ -4,24 +4,34 @@ public protocol HTMLDocument: HTML {
   associatedtype Head: HTML
 
   @HTMLBuilder var head: Head { get }
+
+  var ssg: StyleSheetGenerator? { get }
 }
 
 extension HTMLDocument {
+  public var ssg: StyleSheetGenerator? { .class }
+
   public static func _render<Output: HTMLOutputStream>(
     _ document: consuming Self,
     stylesheet: String,
     into output: inout Output
   ) {
-    var bodyBytes = _HTMLBytes()
-
-    let stylesheet = withDependencies {
-      if !$0.isSSGSet {
-        $0.styleSheetGenerator = .class
+    let documentBody: _HTMLConditional<_HTMLBytes, Body>
+    let stylesheet: String?
+ 
+    if let ssg = document.ssg {
+      var bodyBytes = _HTMLBytes()
+      stylesheet = withDependencies {
+        $0.ssg = ssg
+      } operation: {
+        @Dependency(\.ssg) var generator
+        Body._render(document.body, into: &bodyBytes)
+        return generator?.stylesheet()
       }
-    } operation: {
-      @Dependency(\.styleSheetGenerator) var generator
-      Body._render(document.body, into: &bodyBytes)
-      return generator?.stylesheet()
+      documentBody = .trueContent(bodyBytes)
+    } else {
+      stylesheet = nil
+      documentBody = .falseContent(document.body)
     }
 
     HTMLBuilder.render(into: &output) {
@@ -30,7 +40,7 @@ extension HTMLDocument {
         tag("head") {
           document.head
 
-          if let stylesheet, !stylesheet.isEmpty {
+          if let stylesheet, !stylesheet.isEmpty  {
             style {
               HTMLRaw(stylesheet)
             }
@@ -38,7 +48,7 @@ extension HTMLDocument {
         }
 
         tag("body") {
-          bodyBytes
+          documentBody
         }
       }
     }

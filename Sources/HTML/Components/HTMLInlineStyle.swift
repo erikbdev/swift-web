@@ -62,18 +62,21 @@ public struct HTMLInlineStyle<Content: HTML>: HTML {
     _ html: consuming Self, 
     into output: inout Output
   ) {
-    @Dependency(\.styleSheetGenerator) var generator
-
     withDependencies {
-      if let classes = generator?.generate(html.styles), !classes.isEmpty {
-        $0.allAttributes["class", default: ""]
-          .append(($0.allAttributes.keys.contains("class") ? " " : "") + classes.joined(separator: " "))
-      } else if !html.styles.isEmpty {
+      guard let ssg = $0.ssg else {
         for style in html.styles {
           $0.allAttributes["style", default: ""]
             .append("\(style.property): \(style.value);")
         }
+        return
       }
+
+      let classes = ssg.generate(html.styles)
+
+      guard !classes.isEmpty else { return }
+
+      $0.allAttributes["class", default: ""]
+        .append(($0.allAttributes.keys.contains("class") ? " " : "") + classes.joined(separator: " "))
     } operation: {
       Content._render(
         html.content,
@@ -177,37 +180,38 @@ public struct InlineStyle: Sendable, Hashable {
 @DependencyClient
 public struct StyleSheetGenerator: Sendable {
   let generate: @Sendable (_ styles: OrderedSet<InlineStyle>) -> [String]
-  let stylesheet: @Sendable () -> String
+  public let stylesheet: @Sendable () -> String
 }
 
 extension StyleSheetGenerator {
-  public static var grouped: StyleSheetGenerator {
-    // let usedStyles = LockIsolated<OrderedSet<InlineStyle>>([])
-    let rulesets = LockIsolated<OrderedDictionary<InlineStyle.MediaQuery?, OrderedDictionary<String, String>>>([:])
+  // TBD: add support for stylesheet generation based on list of styles 
+  // public static var grouped: StyleSheetGenerator {
+  //   // let usedStyles = LockIsolated<OrderedSet<InlineStyle>>([])
+  //   let rulesets = LockIsolated<OrderedDictionary<InlineStyle.MediaQuery?, OrderedDictionary<String, String>>>([:])
 
-    return Self(
-      generate: { styles in [] },
-      stylesheet: {
-        rulesets.withValue { rulesets in
-          var sheet = ""
-          for (mediaQuery, styles) in rulesets.sorted(by: { $0.key == nil ? $1.key != nil : false }) {
-            if let mediaQuery {
-              sheet.append("@media \(mediaQuery.rawValue){")
-            }
-            defer {
-              if mediaQuery != nil {
-                sheet.append("}")
-              }
-            }
-            for (className, style) in styles {
-              sheet.append("\(className){\(style)}")
-            }
-          }
-          return sheet
-        }
-       }
-    )
-  }
+  //   return Self(
+  //     generate: { styles in [] },
+  //     stylesheet: {
+  //       rulesets.withValue { rulesets in
+  //         var sheet = ""
+  //         for (mediaQuery, styles) in rulesets.sorted(by: { $0.key == nil ? $1.key != nil : false }) {
+  //           if let mediaQuery {
+  //             sheet.append("@media \(mediaQuery.rawValue){")
+  //           }
+  //           defer {
+  //             if mediaQuery != nil {
+  //               sheet.append("}")
+  //             }
+  //           }
+  //           for (className, style) in styles {
+  //             sheet.append("\(className){\(style)}")
+  //           }
+  //         }
+  //         return sheet
+  //       }
+  //      }
+  //   )
+  // }
 
   public static var `class`: StyleSheetGenerator {
     let usedStyles = LockIsolated<OrderedSet<InlineStyle>>([])
@@ -263,31 +267,14 @@ extension StyleSheetGenerator {
   }
 }
 
+extension StyleSheetGenerator: DependencyKey {
+  public static var liveValue: StyleSheetGenerator? { nil }
+  public static var testValue: StyleSheetGenerator? { nil }
+}
+
 extension DependencyValues {
-  private enum IsSSGSet: DependencyKey {
-    case unset
-    case set(StyleSheetGenerator?)
-
-    static let liveValue = Self.unset
-  }
-
-  var isSSGSet: Bool {
-    if case .unset = self[IsSSGSet.self] {
-      false
-    } else {
-      true
-    }
-  }
-
-  public var styleSheetGenerator: StyleSheetGenerator? { 
-    get { 
-      switch self[IsSSGSet.self] {
-        case .unset: nil
-        case .set(let gen): gen
-      }
-    }
-    set {
-      self[IsSSGSet.self] = .set(newValue)
-    }
+  public var ssg: StyleSheetGenerator? { 
+    get { self[StyleSheetGenerator.self] }
+    set { self[StyleSheetGenerator.self] = newValue }
   }
 }
