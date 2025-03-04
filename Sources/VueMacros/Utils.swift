@@ -17,6 +17,6 @@ extension TokenSyntax {
 
 extension PatternBindingListSyntax {
   var isComputed: Bool {
-    self.contains { $0.accessorBlock?.accessors.is(CodeBlockItemListSyntax.self) ?? false } 
+    self.contains { $0.accessorBlock?.accessors.is(CodeBlockItemListSyntax.self) ?? false }
   }
 }

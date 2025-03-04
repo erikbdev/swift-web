@@ -2,50 +2,50 @@ public protocol ExpressionRepresentable {
   var expression: String { get }
 }
 
-public extension ExpressionRepresentable {
-  static func * <E1: ExpressionRepresentable>(lhs: Self, rhs: E1) -> Expression {
+extension ExpressionRepresentable {
+  public static func * <E1: ExpressionRepresentable>(lhs: Self, rhs: E1) -> Expression {
     Expression(rawValue: "\(lhs.expression) * \(rhs.expression)")
   }
 
-  static func / <E1: ExpressionRepresentable>(lhs: Self, rhs: E1) -> Expression {
+  public static func / <E1: ExpressionRepresentable>(lhs: Self, rhs: E1) -> Expression {
     Expression(rawValue: "\(lhs.expression) / \(rhs.expression)")
   }
 
-  static func + <E1: ExpressionRepresentable>(lhs: Self, rhs: E1) -> Expression {
+  public static func + <E1: ExpressionRepresentable>(lhs: Self, rhs: E1) -> Expression {
     Expression(rawValue: "\(lhs.expression) + \(rhs.expression)")
   }
 
-  static func - <E1: ExpressionRepresentable>(lhs: Self, rhs: E1) -> Expression {
+  public static func - <E1: ExpressionRepresentable>(lhs: Self, rhs: E1) -> Expression {
     Expression(rawValue: "\(lhs.expression) - \(rhs.expression)")
   }
 
-  static func * <E1: Encodable>(lhs: Self, rhs: E1) -> Expression {
+  public static func * <E1: Encodable>(lhs: Self, rhs: E1) -> Expression {
     Expression(rawValue: "\(lhs.expression) * \(rhs)")
   }
 
-  static func / <E1: Encodable>(lhs: Self, rhs: E1) -> Expression {
+  public static func / <E1: Encodable>(lhs: Self, rhs: E1) -> Expression {
     Expression(rawValue: "\(lhs.expression) / \(rhs)")
   }
 
-  static func + <E1: Encodable>(lhs: Self, rhs: E1) -> Expression {
+  public static func + <E1: Encodable>(lhs: Self, rhs: E1) -> Expression {
     Expression(rawValue: "\(lhs.expression) + \(rhs)")
   }
 
-  static func - <E1: Encodable>(lhs: Self, rhs: E1) -> Expression {
+  public static func - <E1: Encodable>(lhs: Self, rhs: E1) -> Expression {
     Expression(rawValue: "\(lhs.expression) - \(rhs)")
   }
 
-  static prefix func ! (lhs: Self) -> Expression {
+  public static prefix func ! (lhs: Self) -> Expression {
     Expression(rawValue: "!\(lhs.expression)")
   }
 
-  subscript (dynamicMember function: String) -> (Expression...) -> Expression {
+  public subscript(dynamicMember function: String) -> (Expression...) -> Expression {
     { args in
       Expression(rawValue: "\(self.expression).\(function)(\(args.map(\.expression).joined(separator: ", ")))")
     }
   }
 
-  subscript (dynamicMember property: String) -> Expression {
+  public subscript(dynamicMember property: String) -> Expression {
     Expression(rawValue: "\(self.expression).\(property)")
   }
 }

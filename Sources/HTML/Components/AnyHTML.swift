@@ -6,7 +6,7 @@ public struct AnyHTML: HTML {
   }
 
   public static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   ) {
     func render<T: HTML>(_ html: T) {

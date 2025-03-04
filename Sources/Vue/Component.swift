@@ -3,7 +3,7 @@ import HTML
 public protocol VueComponent: HTML {}
 
 extension VueComponent {
-  static var componentName: String { 
+  static var componentName: String {
     String(
       String(describing: Self.self)
         .enumerated()
@@ -37,7 +37,7 @@ struct ComponentProps {
 
 extension VueComponent {
   public static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   ) {
     tag(Self.componentName) {}.render(into: &output)

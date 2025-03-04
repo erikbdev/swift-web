@@ -72,26 +72,27 @@ struct TypedAssetsCLI: ParsableCommand {
     var isDirectory = false
     _ = FileManager.default.fileExists(atPath: url.path(), isDirectory: &isDirectory)
 
-    if isDirectory {
-      guard let enumerator = try? FileManager.default.contentsOfDirectory(
-        at: url, 
-        includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey], 
-        options: [.skipsHiddenFiles]
-      ) else {
-        return .dir(canonical: url.lastPathComponent, [])
-      }
-
-      return .dir(
-        canonical: url.lastPathComponent, 
-        enumerator.compactMap(Self.recursive)
-      )
-    } else {
+    guard isDirectory else {
       return .file(
-        canonical: url.deletingPathExtension().lastPathComponent, 
+        canonical: url.deletingPathExtension().lastPathComponent,
         ext: url.pathExtension.isEmpty ? nil : url.pathExtension,
         type: .from(ext: url.pathExtension)
       )
     }
+    guard
+      let enumerator = try? FileManager.default.contentsOfDirectory(
+        at: url,
+        includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey],
+        options: [.skipsHiddenFiles]
+      )
+    else {
+      return .dir(canonical: url.lastPathComponent, [])
+    }
+
+    return .dir(
+      canonical: url.lastPathComponent,
+      enumerator.compactMap(Self.recursive)
+    )
   }
 
   private enum FileOrDir {
@@ -100,19 +101,19 @@ struct TypedAssetsCLI: ParsableCommand {
 
     func code(path: [String] = [], isFirstLevel: Bool = false) -> String {
       switch self {
-        case let .dir(canonical, items):
-          """
-          public var `\(canonical.camelCase())`: \(canonical.pascalCase()) {
-            \(canonical.pascalCase())(baseURL: \(isFirstLevel ? "URL(filePath: \"\(canonical)\", directoryHint: .isDirectory, relativeTo: self.baseURL)" : "self.baseURL.appending(path: \"\(canonical)\", directoryHint: .isDirectory)"))
-          }
-          public struct \(canonical.pascalCase()): Swift.Sendable {
-            public let baseURL: URL
-            \(items.map { $0.code(path: path + [canonical]) }.joined(separator: "\n"), indent: 2)
-          }
-          """
-        case let .file(canonical, ext, type):
+      case let .dir(canonical, items):
+        """
+        public var `\(canonical.camelCase())`: \(canonical.pascalCase()) {
+          \(canonical.pascalCase())(baseURL: \(isFirstLevel ? "URL(filePath: \"\(canonical)\", directoryHint: .isDirectory, relativeTo: self.baseURL)" : "self.baseURL.appending(path: \"\(canonical)\", directoryHint: .isDirectory)"))
+        }
+        public struct \(canonical.pascalCase()): Swift.Sendable {
+          public let baseURL: URL
+          \(items.map { $0.code(path: path + [canonical]) }.joined(separator: "\n"), indent: 2)
+        }
+        """
+      case let .file(canonical, ext, type):
         switch type {
-          case .unknown:
+        case .unknown:
           """
           public var `\(canonical.camelCase() + (ext?.pascalCase() ?? ""))`: AnyFile {
             .init(
@@ -122,7 +123,7 @@ struct TypedAssetsCLI: ParsableCommand {
             )
           }
           """
-          case .image(let width, let height):
+        case .image(let width, let height):
           """
           public var `\(canonical.camelCase() + (ext?.pascalCase() ?? ""))`: ImageFile {
             .init(
@@ -134,7 +135,7 @@ struct TypedAssetsCLI: ParsableCommand {
             )
           }
           """
-          case let .video(width, height, mime):
+        case let .video(width, height, mime):
           """
           public var `\(canonical.camelCase() + (ext?.pascalCase() ?? ""))`: VideoFile {
             .init(
@@ -158,45 +159,43 @@ struct TypedAssetsCLI: ParsableCommand {
 
       static func from(ext: String) -> Self {
         switch ext.trimmingCharacters(in: .whitespacesAndNewlines) {
-          case "gif": .image(width: nil, height: nil)
-          case "jpeg", "jpg": .image(width: nil, height: nil)
-          case "svg": .image(width: nil, height: nil)
-          case "webp": .image(width: nil, height: nil)
-          case "png": .image(width: nil, height: nil)
-          case "mp4": .video(width: nil, height: nil, mime: "video/mp4")
-          case "mov": .video(width: nil, height: nil, mime: "video/quicktime")
-          case "webm": .video(width: nil, height: nil, mime: "video/webm")
-          default: .unknown
+        case "gif": .image(width: nil, height: nil)
+        case "jpeg", "jpg": .image(width: nil, height: nil)
+        case "svg": .image(width: nil, height: nil)
+        case "webp": .image(width: nil, height: nil)
+        case "png": .image(width: nil, height: nil)
+        case "mp4": .video(width: nil, height: nil, mime: "video/mp4")
+        case "mov": .video(width: nil, height: nil, mime: "video/quicktime")
+        case "webm": .video(width: nil, height: nil, mime: "video/webm")
+        default: .unknown
         }
       }
     }
   }
 }
 
-private extension String {
-  func pascalCase() -> Self {
+extension String {
+  fileprivate func pascalCase() -> Self {
     self.split { !$0.isLetter && !$0.isNumber }
-    .map {
-      if let first = $0.first?.uppercased() {
+      .map {
+        guard let first = $0.first?.uppercased() else {
+          return $0
+        }
         return first[...] + $0.dropFirst()
-      } else {
-        return $0
       }
-    }
-    .joined()
+      .joined()
   }
 
-  func camelCase() -> Self {
+  fileprivate func camelCase() -> Self {
     var initialLowercased = false
     return self.split { !$0.isLetter && !$0.isNumber }
       .map {
         if !initialLowercased {
           defer { initialLowercased = true }
-          if let first = $0.first?.lowercased() {
-            return first[...] + $0.dropFirst()
-          } else {
+          guard let first = $0.first?.lowercased() else {
             return $0.lowercased()[...]
           }
+          return first[...] + $0.dropFirst()
         } else if let first = $0.first?.uppercased() {
           return first[...] + $0.dropFirst()
         } else {
@@ -207,8 +206,8 @@ private extension String {
   }
 }
 
-private extension String.StringInterpolation {
-  mutating func appendInterpolation<S: StringProtocol>(_ value: S, indent: Int) {
+extension String.StringInterpolation {
+  fileprivate mutating func appendInterpolation<S: StringProtocol>(_ value: S, indent: Int) {
     appendInterpolation(value.components(separatedBy: "\n").joined(separator: "\n\(String(repeating: " ", count: indent))"))
   }
 }

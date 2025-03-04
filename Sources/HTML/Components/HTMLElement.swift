@@ -11,11 +11,11 @@ public struct HTMLElement<Content: HTML>: HTML {
 
   @_spi(Render) @inline(__always)
   public static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   ) {
     HTMLVoidElement._render(
-      HTMLVoidElement(tag: html.tag), 
+      HTMLVoidElement(tag: html.tag),
       into: &output
     )
 
@@ -42,7 +42,7 @@ public struct HTMLVoidElement: HTML {
 
   @_spi(Render) @inline(__always)
   public static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   ) {
     @Dependency(\.allAttributes) var allAttributes
@@ -58,14 +58,14 @@ public struct HTMLVoidElement: HTML {
         output.write(0x22)  // "
         for byte in value.utf8 {
           switch byte {
-            case 0x28: // &
-              output.write("&amp;".utf8)
-            case 0x22: // "
-              output.write("&quot;".utf8)
-            case 0x27: // '
-              output.write("&#39;".utf8)
-            default:
-              output.write(byte)
+          case 0x28:  // &
+            output.write("&amp;".utf8)
+          case 0x22:  // "
+            output.write("&quot;".utf8)
+          case 0x27:  // '
+            output.write("&#39;".utf8)
+          default:
+            output.write(byte)
           }
         }
         output.write(0x22)  // "

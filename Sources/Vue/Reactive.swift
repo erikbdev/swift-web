@@ -26,8 +26,8 @@ public struct Reactive: ExpressionRepresentable {
 
   public var expression: String { name }
 
-  var statement: Statement { 
-    Statement(keyword: .const, name: name, value: Expression(rawValue: "ref(\(value.expression))")) 
+  var statement: Statement {
+    Statement(keyword: .const, name: name, value: Expression(rawValue: "ref(\(value.expression))"))
   }
 
   public func assign(_ expression: Expression) -> Statement {
@@ -39,14 +39,14 @@ public struct Reactive: ExpressionRepresentable {
   }
 }
 
-public extension HTMLBuilder {
-  static func buildExpression(_ reactive: Reactive) -> HTMLString {
+extension HTMLBuilder {
+  public static func buildExpression(_ reactive: Reactive) -> HTMLString {
     HTMLRaw("{{ \(reactive.name) }}")
   }
 }
 
-public extension HTMLString.StringInterpolation {
-  mutating func appendInterpolation(_ reactive: Reactive) {
+extension HTMLString.StringInterpolation {
+  public mutating func appendInterpolation(_ reactive: Reactive) {
     appendInterpolation(raw: "{{ \(reactive.name) }}")
   }
 }

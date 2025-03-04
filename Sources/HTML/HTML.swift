@@ -7,7 +7,7 @@ public protocol HTML {
 
   @_spi(Render)
   static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   )
 }
@@ -15,7 +15,7 @@ public protocol HTML {
 extension HTML {
   @inline(__always)
   public static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   ) {
     Body._render(html.body, into: &output)
@@ -27,7 +27,7 @@ extension Never: HTML {
 
   @_spi(Render) @inlinable @inline(__always)
   public static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   ) {
   }

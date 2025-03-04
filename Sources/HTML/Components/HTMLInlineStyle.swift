@@ -1,7 +1,7 @@
+import ConcurrencyExtras
 import Dependencies
 import DependenciesMacros
 import OrderedCollections
-import ConcurrencyExtras
 
 extension HTML {
   public func inlineStyle(
@@ -13,7 +13,7 @@ extension HTML {
     post: String? = nil
   ) -> HTMLInlineStyle<Self> {
     HTMLInlineStyle(
-      content: self, 
+      content: self,
       styles: value.flatMap {
         [
           InlineStyle(
@@ -59,7 +59,7 @@ public struct HTMLInlineStyle<Content: HTML>: HTML {
   }
 
   public static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   ) {
     withDependencies {
@@ -122,7 +122,7 @@ public struct InlineStyle: Sendable, Hashable {
   }
 
   public struct MediaQuery: Sendable, Hashable, RawRepresentable, ExpressibleByStringLiteral, ExpressibleByStringInterpolation {
-    private var values = [String]()
+    private var values: [String] = []
 
     public var rawValue: String { self.values.joined(separator: " ") }
 
@@ -184,7 +184,7 @@ public struct StyleSheetGenerator: Sendable {
 }
 
 extension StyleSheetGenerator {
-  // TBD: add support for stylesheet generation based on list of styles 
+  // TBD: add support for stylesheet generation based on list of styles
   // public static var grouped: StyleSheetGenerator {
   //   // let usedStyles = LockIsolated<OrderedSet<InlineStyle>>([])
   //   let rulesets = LockIsolated<OrderedDictionary<InlineStyle.MediaQuery?, OrderedDictionary<String, String>>>([:])
@@ -230,7 +230,8 @@ extension StyleSheetGenerator {
               let className = "c\(index)"
             #endif
 
-            let selector = "\(style.pre.flatMap { $0 + " " } ?? "").\(className)\(style.pseudo?.rawValue ?? "")\(style.post.flatMap { " " + $0 } ?? "")"
+            let selector =
+              "\(style.pre.flatMap { $0 + " " } ?? "").\(className)\(style.pseudo?.rawValue ?? "")\(style.post.flatMap { " " + $0 } ?? "")"
 
             rulesets.withValue { rulesets in
               if rulesets[style.media, default: [:]][selector] == nil {
@@ -243,7 +244,7 @@ extension StyleSheetGenerator {
 
           return classes
         }
-       },
+      },
       stylesheet: {
         rulesets.withValue { rulesets in
           var sheet = ""
@@ -273,7 +274,7 @@ extension StyleSheetGenerator: DependencyKey {
 }
 
 extension DependencyValues {
-  public var ssg: StyleSheetGenerator? { 
+  public var ssg: StyleSheetGenerator? {
     get { self[StyleSheetGenerator.self] }
     set { self[StyleSheetGenerator.self] = newValue }
   }

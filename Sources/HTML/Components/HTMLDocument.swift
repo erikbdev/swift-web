@@ -18,7 +18,7 @@ extension HTMLDocument {
   ) {
     let documentBody: _HTMLConditional<_HTMLBytes, Body>
     let stylesheet: String?
- 
+
     if let ssg = document.ssg {
       var bodyBytes = _HTMLBytes()
       stylesheet = withDependencies {
@@ -40,7 +40,7 @@ extension HTMLDocument {
         tag("head") {
           document.head
 
-          if let stylesheet, !stylesheet.isEmpty  {
+          if let stylesheet, !stylesheet.isEmpty {
             style {
               HTMLRaw(stylesheet)
             }
@@ -59,7 +59,7 @@ private struct _HTMLBytes: HTML, HTMLOutputStream {
   var bytes: ContiguousArray<UInt8> = []
 
   mutating func write(_ byte: UInt8) {
-    self.bytes.append(byte)      
+    self.bytes.append(byte)
   }
 
   mutating func write(_ bytes: consuming some Collection<UInt8>) {
@@ -67,7 +67,7 @@ private struct _HTMLBytes: HTML, HTMLOutputStream {
   }
 
   static func _render<Output: HTMLOutputStream>(
-    _ html: consuming _HTMLBytes, 
+    _ html: consuming _HTMLBytes,
     into output: inout Output
   ) {
     output.write(html.bytes)
@@ -76,8 +76,8 @@ private struct _HTMLBytes: HTML, HTMLOutputStream {
   var body: Never { fatalError() }
 }
 
-private extension HTMLBuilder {
-  static func render<Output: HTMLOutputStream, Content: HTML>(
+extension HTMLBuilder {
+  fileprivate static func render<Output: HTMLOutputStream, Content: HTML>(
     into output: inout Output,
     @HTMLBuilder content: () -> Content
   ) {

@@ -5,6 +5,6 @@ import SwiftSyntaxMacros
 struct MacrosPlugin: CompilerPlugin {
   var providingMacros: [any Macro.Type] = [
     ReactiveMacro.self,
-    StatementMacro.self
+    StatementMacro.self,
   ]
 }

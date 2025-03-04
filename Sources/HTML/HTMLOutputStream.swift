@@ -32,7 +32,7 @@ extension HTML {
     // withDependencies {
     //   $0.htmlContext = HTMLContext(config: $0.htmlConfig)
     // } operation: { [self] in
-      Self._render(self, into: &result)
+    Self._render(self, into: &result)
     // }
     return result
   }
@@ -42,7 +42,7 @@ extension HTML {
     // withDependencies {
     //   $0.htmlContext = HTMLContext(config: $0.htmlConfig)
     // } operation: { [self] in
-      Self._render(self, into: &output)
+    Self._render(self, into: &output)
     // }
   }
 }

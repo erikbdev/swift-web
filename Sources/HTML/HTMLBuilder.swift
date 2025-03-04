@@ -26,7 +26,8 @@ public struct HTMLBuilder {
   }
 
   @inlinable @inline(__always)
-  public static func buildEither<TrueContent: HTML, FalseContent: HTML>(second component: FalseContent) -> _HTMLConditional<TrueContent, FalseContent> {
+  public static func buildEither<TrueContent: HTML, FalseContent: HTML>(second component: FalseContent) -> _HTMLConditional<TrueContent, FalseContent>
+  {
     _HTMLConditional.falseContent(component)
   }
 }

@@ -17,22 +17,7 @@
       context: Context,
       next: (Input, Context) async throws -> Output
     ) async throws -> Output {
-      if request.uri.path == path {
-        return Response(
-          status: .ok,
-          headers: [
-            .contentType: "text/event-stream",
-            .cacheControl: "no-cache",
-            .connection: "keep-alive",
-          ],
-          body: .init { writer in
-            for await _ in clock.timer(interval: .seconds(1)).cancelOnGracefulShutdown() {
-              try await writer.write(ByteBuffer(string: "data: heartbeat\n\n"))
-            }
-            try await writer.finish(nil)
-          }
-        )
-      } else {
+      guard request.uri.path == path else {
         var handled = try await next(request, context)
 
         if let content = handled.headers[.contentType], content.contains("text/html") {
@@ -69,6 +54,20 @@
         }
         return handled
       }
+      return Response(
+        status: .ok,
+        headers: [
+          .contentType: "text/event-stream",
+          .cacheControl: "no-cache",
+          .connection: "keep-alive",
+        ],
+        body: .init { writer in
+          for await _ in clock.timer(interval: .seconds(1)).cancelOnGracefulShutdown() {
+            try await writer.write(ByteBuffer(string: "data: heartbeat\n\n"))
+          }
+          try await writer.finish(nil)
+        }
+      )
     }
   }
 

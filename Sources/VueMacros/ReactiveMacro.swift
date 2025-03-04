@@ -16,35 +16,34 @@ public struct ReactiveMacro: PeerMacro {
     }
 
     return try [
-      DeclSyntax(variableDecl.projected()),
+      DeclSyntax(variableDecl.projected())
     ]
   }
 
   private enum Error: Swift.Error {}
 }
 
-private extension VariableDeclSyntax {
-  func projected() throws -> Self {
-    if case let .keyword(key) = bindingSpecifier.tokenKind, key == .let, let bindings = try bindings.projected() {
-      VariableDeclSyntax(
-        leadingTrivia: leadingTrivia,
-        modifiers: modifiers,
-        bindingSpecifier: TokenSyntax(
-          bindings.isComputed ? .keyword(.var) : .keyword(.let),
-          trailingTrivia: .space,
-          presence: .present
-        ),
-        bindings: bindings,
-        trailingTrivia: trailingTrivia
-      )
-    } else {
+extension VariableDeclSyntax {
+  fileprivate func projected() throws -> Self {
+    guard case let .keyword(key) = bindingSpecifier.tokenKind, key == .let, let bindings = try bindings.projected() else {
       throw SwiftSyntaxMacros.MacroExpansionErrorMessage("`\(qualifiedMacroName)` can only be applied to a 'let'")
     }
+    return VariableDeclSyntax(
+      leadingTrivia: leadingTrivia,
+      modifiers: modifiers,
+      bindingSpecifier: TokenSyntax(
+        bindings.isComputed ? .keyword(.var) : .keyword(.let),
+        trailingTrivia: .space,
+        presence: .present
+      ),
+      bindings: bindings,
+      trailingTrivia: trailingTrivia
+    )
   }
 }
 
-private extension PatternBindingListSyntax {
-  func projected() throws -> Self? {
+extension PatternBindingListSyntax {
+  fileprivate func projected() throws -> Self? {
     var bindings = self
     for index in bindings.indices {
       bindings[index] = try bindings[index].projected()
@@ -53,16 +52,20 @@ private extension PatternBindingListSyntax {
   }
 }
 
-private extension PatternBindingSyntax {
-  func projected() throws -> Self {
-    if let identifier = pattern.as(IdentifierPatternSyntax.self) {
-      let initializer: InitializerClauseSyntax? = if let initializer = self.initializer?.value {
+extension PatternBindingSyntax {
+  fileprivate func projected() throws -> Self {
+    guard let identifier = pattern.as(IdentifierPatternSyntax.self) else {
+      throw SwiftSyntaxMacros.MacroExpansionErrorMessage("`\(qualifiedMacroName)` requires an identifier")
+    }
+    let initializer: InitializerClauseSyntax? =
+      if let initializer = self.initializer?.value {
         InitializerClauseSyntax(value: callReactiveFunc(identifier: identifier, initializer: initializer))
       } else {
         nil
       }
 
-      let accessorBlock: AccessorBlockSyntax? = if self.initializer?.value == nil {
+    let accessorBlock: AccessorBlockSyntax? =
+      if self.initializer?.value == nil {
         AccessorBlockSyntax(
           accessors: .getter([
             CodeBlockItemSyntax(
@@ -78,33 +81,30 @@ private extension PatternBindingSyntax {
                   )
                 )
               )
-            ),
+            )
           ])
         )
       } else {
         nil
       }
 
-      return PatternBindingSyntax(
-        leadingTrivia: leadingTrivia,
-        pattern: IdentifierPatternSyntax(
-          leadingTrivia: identifier.leadingTrivia,
-          identifier: identifier.identifier.trimmed.prefixed("$"),
-          trailingTrivia: identifier.trailingTrivia
-        ),
-        typeAnnotation: accessorBlock.flatMap { _ in
-           TypeAnnotationSyntax(
-            colon: .colonToken(),
-            type: IdentifierTypeSyntax(name: .identifier("\(libraryName).\(macroName)"))
-          )
-        },
-        initializer: initializer,
-        accessorBlock: accessorBlock,
-        trailingComma: trailingComma
-      )
-    } else {
-      throw SwiftSyntaxMacros.MacroExpansionErrorMessage("`\(qualifiedMacroName)` requires an identifier")
-    }
+    return PatternBindingSyntax(
+      leadingTrivia: leadingTrivia,
+      pattern: IdentifierPatternSyntax(
+        leadingTrivia: identifier.leadingTrivia,
+        identifier: identifier.identifier.trimmed.prefixed("$"),
+        trailingTrivia: identifier.trailingTrivia
+      ),
+      typeAnnotation: accessorBlock.flatMap { _ in
+        TypeAnnotationSyntax(
+          colon: .colonToken(),
+          type: IdentifierTypeSyntax(name: .identifier("\(libraryName).\(macroName)"))
+        )
+      },
+      initializer: initializer,
+      accessorBlock: accessorBlock,
+      trailingComma: trailingComma
+    )
   }
 
   private func callReactiveFunc(

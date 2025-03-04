@@ -1,12 +1,13 @@
-import struct URLRouting.URLRequestData
-import struct Hummingbird.Request
-import struct HTTPTypes.HTTPFields
-import struct Foundation.Data
-import struct NIO.ByteBuffer
 import Parsing
 
-public extension URLRequestData {
-  init(request: Hummingbird.Request) async {
+import struct Foundation.Data
+import struct HTTPTypes.HTTPFields
+import struct Hummingbird.Request
+import struct NIO.ByteBuffer
+import struct URLRouting.URLRequestData
+
+extension URLRequestData {
+  public init(request: Hummingbird.Request) async {
     var body: ByteBuffer?
     do {
       for try await var buffer in request.body {
@@ -49,11 +50,10 @@ public extension URLRequestData {
 
 extension HTTPFields {
   public var basicAuthorization: (String, String)? {
-    if case let .basic(username, password) = self.authorization {
-      return (username, password)
-    } else {
+    guard case let .basic(username, password) = self.authorization else {
       return nil
     }
+    return (username, password)
   }
 
   public var authorization: Authorization? {
@@ -77,7 +77,7 @@ extension HTTPFields {
     static var parser: some Parser<Substring, Self> {
       OneOf {
         Parse(.case(Self.bearer)) {
-          OneOf { 
+          OneOf {
             "Bearer"
             "bearer"
           }

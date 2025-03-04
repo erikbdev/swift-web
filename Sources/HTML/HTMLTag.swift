@@ -21,7 +21,7 @@ public struct HTMLTag: ExpressibleByStringLiteral {
   @inlinable @inline(__always)
   public func callAsFunction(_ attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
     HTMLAttributes(
-      content: HTMLElement(tag: rawValue, content: EmptyHTML.init), 
+      content: HTMLElement(tag: rawValue, content: EmptyHTML.init),
       attributes: .init(attributes)
     )
   }
@@ -40,7 +40,7 @@ public struct HTMLTag: ExpressibleByStringLiteral {
     @HTMLBuilder content: @escaping () -> Content
   ) -> HTMLAttributes<HTMLElement<Content>> {
     HTMLAttributes(
-      content: HTMLElement(tag: rawValue, content: content), 
+      content: HTMLElement(tag: rawValue, content: content),
       attributes: .init(attributes)
     )
   }
@@ -67,7 +67,7 @@ public struct HTMLVoidTag: ExpressibleByStringLiteral {
   @inlinable @inline(__always)
   public func callAsFunction(_ attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLVoidElement> {
     HTMLAttributes(
-      content: HTMLVoidElement(tag: rawValue), 
+      content: HTMLVoidElement(tag: rawValue),
       attributes: .init(attributes)
     )
   }

@@ -27,38 +27,38 @@ public struct HTMLString: HTML, ExpressibleByStringLiteral, ExpressibleByStringI
 
   @_spi(Render) @inline(__always)
   public static func _render<Output: HTMLOutputStream>(
-    _ html: consuming Self, 
+    _ html: consuming Self,
     into output: inout Output
   ) {
     for value in html._storage {
       switch value.element {
-        case .bytes(let bytes):
-          for byte in bytes {
-            switch byte {
-            case 0x26 where value.escape: // &
-              output.write("&amp;".utf8)
-            case 0x3C where value.escape: // <
-              output.write("&lt;".utf8)
-            default:
-              output.write(byte)
-            }
+      case .bytes(let bytes):
+        for byte in bytes {
+          switch byte {
+          case 0x26 where value.escape:  // &
+            output.write("&amp;".utf8)
+          case 0x3C where value.escape:  // <
+            output.write("&lt;".utf8)
+          default:
+            output.write(byte)
           }
-        case .html(let html):
-          withUnsafeMutablePointer(to: &output) { output in
-            var proxy = _HTMLOutputStreamProxy { bytes in
-              for byte in bytes {
+        }
+      case .html(let html):
+        withUnsafeMutablePointer(to: &output) { output in
+          var proxy = _HTMLOutputStreamProxy { bytes in
+            for byte in bytes {
               switch byte {
-                case 0x26 where value.escape: // &
-                  output.pointee.write("&amp;".utf8)
-                case 0x3C where value.escape: // <
-                  output.pointee.write("&lt;".utf8)
-                default:
-                  output.pointee.write(byte)
-                }
+              case 0x26 where value.escape:  // &
+                output.pointee.write("&amp;".utf8)
+              case 0x3C where value.escape:  // <
+                output.pointee.write("&lt;".utf8)
+              default:
+                output.pointee.write(byte)
               }
             }
-            AnyHTML._render(html, into: &proxy)
           }
+          AnyHTML._render(html, into: &proxy)
+        }
       }
     }
   }
@@ -72,7 +72,7 @@ extension HTMLString {
     let escape: Bool
 
     init<S: Sequence<UInt8>>(_ bytes: S, escape: Bool) {
-      self.element = .bytes(ContiguousArray(bytes)) 
+      self.element = .bytes(ContiguousArray(bytes))
       self.escape = escape
     }
 
