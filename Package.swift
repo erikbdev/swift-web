@@ -24,7 +24,7 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.0"),
     .package(url: "https://github.com/pointfreeco/swift-url-routing.git", from: "0.6.0"),
     .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.1"),
-    .package(url: "https://github.com/swiftlang/swift-markdown.git", revision: "e62a44fd1f2764ba8807db3b6f257627449bbb8c")
+    .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.5.0")
   ],
   targets: [
     /// Typed Assets
