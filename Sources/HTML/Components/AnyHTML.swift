@@ -1,7 +1,9 @@
 public struct AnyHTML: HTML {
+  @usableFromInline
   let base: any HTML
 
-  init(_ base: some HTML) {
+  @inlinable @inline(__always)
+  public init(_ base: some HTML) {
     self.base = base
   }
 

@@ -15,11 +15,11 @@ public struct HTMLTag: ExpressibleByStringLiteral {
 
   @inlinable @inline(__always)
   public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
-    self.callAsFunction([])
+    self.callAsFunction(attributes: [])
   }
 
   @inlinable @inline(__always)
-  public func callAsFunction(_ attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
+  public func callAsFunction(attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
     HTMLAttributes(
       content: HTMLElement(tag: rawValue, content: EmptyHTML.init),
       attributes: .init(attributes)
@@ -29,15 +29,15 @@ public struct HTMLTag: ExpressibleByStringLiteral {
   @inlinable @inline(__always)
   public func callAsFunction<Content: HTML>(
     _ attributes: HTMLAttribute...,
-    @HTMLBuilder content: @escaping () -> Content
+    @HTMLBuilder content: () -> Content
   ) -> HTMLAttributes<HTMLElement<Content>> {
-    self.callAsFunction(attributes, content: content)
+    self.callAsFunction(attributes: attributes, content: content)
   }
 
   @inlinable @inline(__always)
   public func callAsFunction<Content: HTML>(
-    _ attributes: [HTMLAttribute],
-    @HTMLBuilder content: @escaping () -> Content
+    attributes: [HTMLAttribute],
+    @HTMLBuilder content: () -> Content
   ) -> HTMLAttributes<HTMLElement<Content>> {
     HTMLAttributes(
       content: HTMLElement(tag: rawValue, content: content),
@@ -61,11 +61,11 @@ public struct HTMLVoidTag: ExpressibleByStringLiteral {
 
   @inlinable @inline(__always)
   public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLAttributes<HTMLVoidElement> {
-    self.callAsFunction(attributes)
+    self.callAsFunction(attributes: attributes)
   }
 
   @inlinable @inline(__always)
-  public func callAsFunction(_ attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLVoidElement> {
+  public func callAsFunction(attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLVoidElement> {
     HTMLAttributes(
       content: HTMLVoidElement(tag: rawValue),
       attributes: .init(attributes)
@@ -171,6 +171,7 @@ public var style: HTMLTag { #function }
 public var sub: HTMLTag { #function }
 public var summary: HTMLTag { #function }
 public var sup: HTMLTag { #function }
+public var svg: HTMLTag { #function }
 public var table: HTMLTag { #function }
 public var tbody: HTMLTag { #function }
 public var td: HTMLTag { #function }

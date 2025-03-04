@@ -30,6 +30,10 @@ public struct HTMLBuilder {
   {
     _HTMLConditional.falseContent(component)
   }
+
+  public static func buildArray<Element: HTML>(_ components: [Element]) -> _HTMLArray<Element> {
+    _HTMLArray(elements: components)
+  }
 }
 
 extension HTMLBuilder {
@@ -40,6 +44,16 @@ extension HTMLBuilder {
 
   @inlinable @inline(__always)
   public static func buildExpression(_ component: HTMLString) -> HTMLString {
+    component
+  }
+
+  @inlinable @inline(__always) @_disfavoredOverload
+  public static func buildExpression(_ component: String) -> HTMLString {
+    HTMLString(component)
+  }
+
+  @inlinable @inline(__always)
+  public static func buildFinalResult<Content: HTML>(_ component: Content) -> Content {
     component
   }
 }

@@ -23,7 +23,8 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-dependencies.git", from: "1.5.0"),
     .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.0"),
     .package(url: "https://github.com/pointfreeco/swift-url-routing.git", from: "0.6.0"),
-    .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.1")
+    .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.1"),
+    .package(url: "https://github.com/swiftlang/swift-markdown.git", revision: "e62a44fd1f2764ba8807db3b6f257627449bbb8c")
   ],
   targets: [
     /// Typed Assets
@@ -92,7 +93,8 @@ let package = Package(
       dependencies: [
         .product(name: "OrderedCollections", package: "swift-collections"),
         .product(name: "Dependencies", package: "swift-dependencies"),
-        .product(name: "DependenciesMacros", package: "swift-dependencies")
+        .product(name: "DependenciesMacros", package: "swift-dependencies"),
+        .product(name: "Markdown", package: "swift-markdown")
       ]
     ),
     .testTarget(
