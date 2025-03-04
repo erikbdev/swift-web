@@ -23,8 +23,7 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-dependencies.git", from: "1.5.0"),
     .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.0"),
     .package(url: "https://github.com/pointfreeco/swift-url-routing.git", from: "0.6.0"),
-    .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.1"),
-    .package(url: "https://github.com/sliemeobn/elementary.git", from: "0.4.0")
+    .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.1")
   ],
   targets: [
     /// Typed Assets
@@ -73,9 +72,9 @@ let package = Package(
     .target(
       name: "Vue",
       dependencies: [
+        "HTML",
         "VueMacros",
         .product(name: "Dependencies", package: "swift-dependencies"),
-        .product(name: "Elementary", package: "elementary")
       ]
     ),
     .testTarget(

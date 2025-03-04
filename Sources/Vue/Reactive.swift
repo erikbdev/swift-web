@@ -40,7 +40,13 @@ public struct Reactive: ExpressionRepresentable {
 }
 
 public extension HTMLBuilder {
-  static func buildExpression(_ reactive: Reactive) -> HTMLRaw {
+  static func buildExpression(_ reactive: Reactive) -> HTMLString {
     HTMLRaw("{{ \(reactive.name) }}")
+  }
+}
+
+public extension HTMLString.StringInterpolation {
+  mutating func appendInterpolation(_ reactive: Reactive) {
+    appendInterpolation(raw: "{{ \(reactive.name) }}")
   }
 }

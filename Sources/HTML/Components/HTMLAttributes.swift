@@ -21,34 +21,6 @@ extension HTML {
   }
 }
 
-public struct HTMLAttribute: Hashable, Sendable {
-  public let name: String
-  public let value: String?
-  public let mergeMode: MergeMode
-
-  public init(name: String = #function, value: String? = "", mergeMode: MergeMode = .replaceValue) {
-    self.name = name
-    self.value = value
-    self.mergeMode = mergeMode
-  }
-
-  public func callAsFunction(_ value: String? = "", mergeMode: MergeMode = .replaceValue) -> Self {
-    Self(name: name, value: value, mergeMode: mergeMode)
-  }
-
-  public enum MergeMode: Sendable {
-    case replaceValue
-    case mergeValue
-    case ignoreIfSet
-  }
-}
-
-extension HTMLAttribute {
-  public static var `class`: HTMLAttribute { HTMLAttribute() }
-  public static var style: HTMLAttribute { HTMLAttribute() }
-  public static var id: HTMLAttribute { HTMLAttribute() }
-}
-
 public struct HTMLAttributes<Content: HTML>: HTML {
   let content: Content
   var attributes: OrderedSet<HTMLAttribute>

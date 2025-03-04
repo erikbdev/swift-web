@@ -1,5 +1,5 @@
-import Elementary
 import Foundation
+import HTML
 
 struct VueScript: HTML {
   #if DEBUG
@@ -8,7 +8,7 @@ struct VueScript: HTML {
     private static let config = ".prod"
   #endif
 
-  var content: some HTML {
+  var body: some HTML {
     script(.type(.importmap)) {
 
       """
@@ -73,23 +73,23 @@ struct VueScript: HTML {
 //   var body: Body { get }
 // }
 
-public extension HTMLAttribute where Tag: HTMLTrait.Attributes.Global {
+extension HTMLAttribute {
   /// A namespace for VueJS attributes.
   /// See the [VueJS directives](https://vuejs.org/api/built-in-directives) for more information.
-  enum v {}
+  public enum v {}
 }
 
-public extension HTMLAttribute.v {
+extension HTMLAttribute.v {
 
-  struct OnEventModifier {
+  public struct OnEventModifier {
     fileprivate let chain: [String]
 
     private init(_ modifier: String = #function) {
       self.chain = [modifier]
     }
 
-    private init(_ chain: [String]) { 
-      self.chain = chain 
+    private init(_ chain: [String]) {
+      self.chain = chain
     }
 
     public var stop: Self { add() }
@@ -120,61 +120,43 @@ public extension HTMLAttribute.v {
   }
 
   /// Update the element's text content.
-  static func text<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
+  public static func text<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
     directive(script.expression)
   }
 
   /// Update the element's innerHTML.
-  static func html<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
+  public static func html<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
     directive(script.expression)
   }
 
   /// Toggle the element's visibility based on the truthy-ness of the expression value.
-  static func show<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
+  public static func show<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
     directive(script.expression)
   }
 
   /// Conditionally render an element or a template fragment based on the truthy-ness of the expression value.
-  static func `if`<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
+  public static func `if`<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
     directive(script.expression)
   }
 
   /// Denote the "else block" for ``v-if`` or a ``v-if`` / ``v-else-if`` chain.
-  static var `else`: HTMLAttribute {
+  public static var `else`: HTMLAttribute {
     directive()
   }
 
   /// Denote the "else if block" for ``v-if``. Can be chained.
-  static func elseIf<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
+  public static func elseIf<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
     directive(name: "else-if", script.expression)
   }
 
   /// Render the element or template block multiple times based on the source data.
-  static func `for`<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
+  public static func `for`<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
     directive(name: "else-if", script.expression)
   }
 
   /// Attach an event listener to the element.
-  static func on<S: StatementRepresentable>(
-    _ event: HTMLAttributeValue.MouseEvent,
-    modifiers: OnEventModifier? = nil,
-    _ script: S
-  ) -> HTMLAttribute {
-    directive(name: "on:\(event.rawValue)\(modifiers.flatMap { ".\($0.chain.joined(separator: "."))" } ?? "")", script.statement)
-  }
-
-  /// Attach an event listener to the element.
-  static func on<S: StatementRepresentable>(
-    _ event: HTMLAttributeValue.KeyboardEvent,
-    modifiers: OnEventModifier? = nil,
-    _ script: S
-  ) -> HTMLAttribute {
-    directive(name: "on:\(event.rawValue)\(modifiers.flatMap { ".\($0.chain.joined(separator: "."))" } ?? "")", script.statement)
-  }
-
-  /// Attach an event listener to the element.
-  static func on<S: StatementRepresentable>(
-    _ event: HTMLAttributeValue.FormEvent,
+  public static func on<S: StatementRepresentable, Event: HTMLEventValue>(
+    _ event: Event,
     modifiers: OnEventModifier? = nil,
     _ script: S
   ) -> HTMLAttribute {
@@ -182,21 +164,21 @@ public extension HTMLAttribute.v {
   }
 
   /// Dynamically bind one or more attributes, or a component prop to an expression.
-  static func bind<E: ExpressionRepresentable>(
+  public static func bind<E: ExpressionRepresentable>(
     _ attrOrProp: String,
     _ script: E
   ) -> HTMLAttribute {
     directive(name: "bind:\(attrOrProp)", script.expression)
   }
 
-  static func bind<E: ExpressionRepresentable>(
+  public static func bind<E: ExpressionRepresentable>(
     _ script: E
   ) -> HTMLAttribute {
     directive(script.expression)
   }
 
   /// Create a two-way binding on a form input element or a component.
-  static func model<E: ExpressionRepresentable>(
+  public static func model<E: ExpressionRepresentable>(
     _ attribute: String? = nil,
     _ modifiers: String? = nil,
     _ script: E
@@ -205,32 +187,32 @@ public extension HTMLAttribute.v {
   }
 
   /// Denote named slots or scoped slots that expect to receive props.
-  static func slot<E: ExpressionRepresentable>(name: String? = nil, _ script: E? = nil) -> HTMLAttribute {
+  public static func slot<E: ExpressionRepresentable>(name: String? = nil, _ script: E? = nil) -> HTMLAttribute {
     directive(name: "slot\(name.flatMap { ":\($0)" } ?? "" )", script?.expression)
   }
 
   /// Skip compilation for this element and all its children.
-  static var pre: HTMLAttribute {
+  public static var pre: HTMLAttribute {
     directive()
   }
 
   /// Render the element and component once only, and skip future updates.
-  static var once: HTMLAttribute {
+  public static var once: HTMLAttribute {
     directive()
   }
 
   /// Used to hide un-compiled template until it is ready.
-  static var cloak: HTMLAttribute {
+  public static var cloak: HTMLAttribute {
     directive()
   }
 
   /// Used as a replacement for `#app`, works the same way as `v-scope` in `petite-vue`
-  static func scope(_ script: Expression) -> HTMLAttribute {
+  public static func scope(_ script: Expression) -> HTMLAttribute {
     directive(script.expression)
   }
 
   private static func directive(
-    name: String = #function, 
+    name: String = #function,
     _ script: String? = nil
   ) -> HTMLAttribute {
     .init(name: "v-\(name.components(separatedBy: "(").first ?? name)", value: script)

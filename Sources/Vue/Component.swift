@@ -1,9 +1,6 @@
-import Elementary
+import HTML
 
-public protocol VueComponent: HTML {
-  associatedtype Body: HTML
-  @HTMLBuilder var body: Body { get }
-}
+public protocol VueComponent: HTML {}
 
 extension VueComponent {
   static var componentName: String { 
@@ -27,7 +24,7 @@ extension VueComponent {
     ComponentProps(
       name: Self.componentName,
       refs: [],
-      template: body.renderFormatted()
+      template: body.render()
     )
   }
 }
@@ -39,19 +36,10 @@ struct ComponentProps {
 }
 
 extension VueComponent {
-  public static func _render<Renderer: _AsyncHTMLRendering>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self, 
-    into renderer: inout Renderer, 
-    with context: consuming _RenderingContext
-  ) async throws {
-    try await renderer.appendToken(.raw("<\(Self.componentName)></\(Self.componentName)>"))
-  }
-
-  public static func _render<Renderer: _HTMLRendering>(
-    _ html: consuming Self, 
-    into renderer: inout Renderer, 
-    with context: consuming _RenderingContext
+    into output: inout Output
   ) {
-    renderer.appendToken(.raw("<\(Self.componentName)></\(Self.componentName)>"))
+    tag(Self.componentName) {}.render(into: &output)
   }
 }

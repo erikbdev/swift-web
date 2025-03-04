@@ -131,5 +131,5 @@ import VueMacros
     """
   )
 
-  #expect(component.renderFormatted() == "<custom-component></custom-component>")
+  #expect(component.render() == "<custom-component></custom-component>")
 }
