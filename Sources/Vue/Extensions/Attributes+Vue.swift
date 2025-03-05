@@ -1,27 +1,31 @@
 import Foundation
 import HTML
 
-struct VueScript: HTML {
-  #if DEBUG
-    private static let config = ""
-  #else
-    private static let config = ".prod"
-  #endif
+public struct VueScript: HTML {
+  let config: Configuration
 
-  var body: some HTML {
-    script(.type(.importmap)) {
-      """
-      {
-        "imports": {
-          "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser\(Self.config).js"
-        }
-      }
-      """
-    }
+  public enum Configuration: String {
+    case development = ""
+    case production = "prod"
+  }
+
+  public init() {
+  #if DEBUG
+    self.config = .development
+  #else
+    self.config = .production
+  #endif
+  }
+
+  public init(_ configuration: Configuration) {
+    self.config = configuration
+  }
+
+  public var body: some HTML {
     script(.type(.module), .defer) {
       HTMLRaw(
         """
-        import { createApp, reactive } from 'vue';
+        import { createApp, reactive } from 'https://unpkg.com/vue@3/dist/vue.esm-browser\(config.rawValue).js';
 
         const roots = [...document.documentElement.querySelectorAll(`[v-scope]`)]
           .filter((root) => !root.matches(`[v-scope] [v-scope]`));

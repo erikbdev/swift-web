@@ -4,30 +4,23 @@ public protocol HTMLDocument: HTML {
   associatedtype Head: HTML
 
   @HTMLBuilder var head: Head { get }
-
-  var ssg: StyleSheetGenerator? { get }
 }
 
 extension HTMLDocument {
-  public var ssg: StyleSheetGenerator? { .class }
-
   @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ document: consuming Self,
     into output: inout Output
   ) {
+    @Dependency(\.ssg) var ssg
+
     let documentBody: _HTMLConditional<_HTMLBytes, Body>
     let stylesheet: String
 
-    if let ssg = document.ssg {
+    if let ssg {
       var bodyBytes = _HTMLBytes()
-      stylesheet = withDependencies {
-        $0.ssg = ssg
-      } operation: {
-        @Dependency(\.ssg) var generator
-        Body._render(document.body, into: &bodyBytes)
-        return generator?.stylesheet() ?? ""
-      }
+      Body._render(document.body, into: &bodyBytes)
+      stylesheet = ssg.stylesheet()
       documentBody = .trueContent(bodyBytes)
     } else {
       stylesheet = ""
