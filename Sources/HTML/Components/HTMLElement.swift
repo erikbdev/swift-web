@@ -1,15 +1,19 @@
 import Dependencies
+import OrderedCollections
 
 public struct HTMLElement<Content: HTML>: HTML {
   public let tag: String
+
+  @usableFromInline
   let content: Content
 
+  @inlinable @inline(__always)
   public init(tag: String, @HTMLBuilder content: () -> Content) {
     self.tag = tag
     self.content = content()
   }
 
-  @_spi(Render) @inline(__always)
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -33,14 +37,17 @@ public struct HTMLElement<Content: HTML>: HTML {
   public var body: Never { fatalError() }
 }
 
-public struct HTMLVoidElement: HTML {
+extension HTMLElement: Sendable where Content: Sendable {}
+
+public struct HTMLVoidElement: HTML, Sendable {
   public let tag: String
 
+  @inlinable @inline(__always)
   public init(tag: String) {
     self.tag = tag
   }
 
-  @_spi(Render) @inline(__always)
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output

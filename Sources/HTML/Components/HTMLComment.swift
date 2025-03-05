@@ -1,4 +1,5 @@
-public struct HTMLComment: HTML {
+public struct HTMLComment: HTML, Sendable {
+  @usableFromInline
   let bytes: ContiguousArray<UInt8>
 
   @inlinable @inline(__always)
@@ -6,12 +7,12 @@ public struct HTMLComment: HTML {
     self.init(comment.utf8)
   }
 
-  @inline(__always)
+  @inlinable @inline(__always)
   public init(_ comment: consuming some Sequence<UInt8>) {
     self.bytes = ContiguousArray(comment)
   }
 
-  @_spi(Render) @inline(__always)
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming HTMLComment,
     into output: inout Output

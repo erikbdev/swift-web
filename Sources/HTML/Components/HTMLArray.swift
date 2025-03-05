@@ -1,6 +1,13 @@
 public struct _HTMLArray<Element: HTML>: HTML {
+  @usableFromInline
   let elements: [Element]
 
+  @inlinable @inline(__always)
+  init(elements: [Element]) {
+    self.elements = elements
+  }
+
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self, 
     into output: inout Output
@@ -12,3 +19,5 @@ public struct _HTMLArray<Element: HTML>: HTML {
 
   public var body: Never { fatalError() }
 }
+
+extension _HTMLArray: Sendable where Element: Sendable {}

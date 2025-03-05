@@ -1,4 +1,4 @@
-public struct HTMLDoctype: HTML {
+public struct HTMLDoctype: HTML, Sendable {
   @inlinable @inline(__always)
   public init() {}
 

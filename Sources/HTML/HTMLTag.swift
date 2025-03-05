@@ -1,6 +1,6 @@
 import OrderedCollections
 
-public struct HTMLTag: ExpressibleByStringLiteral {
+public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
   public let rawValue: String
 
   @inlinable @inline(__always)
@@ -46,7 +46,7 @@ public struct HTMLTag: ExpressibleByStringLiteral {
   }
 }
 
-public struct HTMLVoidTag: ExpressibleByStringLiteral {
+public struct HTMLVoidTag: Hashable, Sendable, ExpressibleByStringLiteral {
   public let rawValue: String
 
   @inlinable @inline(__always)

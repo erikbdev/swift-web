@@ -2,8 +2,9 @@ import Dependencies
 
 struct HTMLContext: Sendable {
   let config: HTMLOutputConfig
-  let currentIndentation = ""
   var depth: UInt = 0
+
+  var currentIndentation: String { String(repeating: config.indentation, count: Int(depth)) }
 }
 
 extension HTMLContext: TestDependencyKey {

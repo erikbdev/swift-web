@@ -103,5 +103,12 @@ let package = Package(
         "HTML"
       ]
     )
-  ]
+  ],
+  swiftLanguageModes: [.v6]
 )
+
+for target in package.targets where ![.plugin].contains(target.type) {
+  target.swiftSettings = (target.swiftSettings ?? []) + [
+    .enableUpcomingFeature("StrictConcurrency=complete")
+  ]
+}

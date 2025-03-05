@@ -31,6 +31,7 @@ public struct HTMLBuilder {
     _HTMLConditional.falseContent(component)
   }
 
+  @inlinable @inline(__always)
   public static func buildArray<Element: HTML>(_ components: [Element]) -> _HTMLArray<Element> {
     _HTMLArray(elements: components)
   }

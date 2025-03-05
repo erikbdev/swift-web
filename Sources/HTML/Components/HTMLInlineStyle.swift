@@ -58,6 +58,7 @@ public struct HTMLInlineStyle<Content: HTML>: HTML {
     return copy
   }
 
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -87,6 +88,8 @@ public struct HTMLInlineStyle<Content: HTML>: HTML {
 
   public var body: Never { fatalError() }
 }
+
+extension HTMLInlineStyle: Sendable where Content: Sendable {}
 
 public struct InlineStyle: Sendable, Hashable {
   let property: String
@@ -179,7 +182,7 @@ public struct InlineStyle: Sendable, Hashable {
 
 @DependencyClient
 public struct StyleSheetGenerator: Sendable {
-  let generate: @Sendable (_ styles: OrderedSet<InlineStyle>) -> [String]
+  public let generate: @Sendable (_ styles: OrderedSet<InlineStyle>) -> [String]
   public let stylesheet: @Sendable () -> String
 }
 

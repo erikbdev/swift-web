@@ -2,7 +2,7 @@ public enum _HTMLConditional<TrueContent: HTML, FalseContent: HTML>: HTML {
   case trueContent(TrueContent)
   case falseContent(FalseContent)
 
-  @_spi(Render) @inlinable @inline(__always)
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -15,3 +15,5 @@ public enum _HTMLConditional<TrueContent: HTML, FalseContent: HTML>: HTML {
 
   public var body: Never { fatalError() }
 }
+
+extension _HTMLConditional: Sendable where TrueContent: Sendable, FalseContent: Sendable {}

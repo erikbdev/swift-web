@@ -1,12 +1,13 @@
 public struct HTMLTuple<each Content: HTML>: HTML {
+  @usableFromInline
   let content: (repeat each Content)
 
-  @inline(__always)
+  @inlinable @inline(__always)
   public init(_ content: repeat each Content) {
     self.content = (repeat each content)
   }
 
-  @_spi(Render) @inline(__always)
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -20,3 +21,5 @@ public struct HTMLTuple<each Content: HTML>: HTML {
 
   public var body: Never { fatalError() }
 }
+
+extension HTMLTuple: Sendable where repeat each Content: Sendable {}

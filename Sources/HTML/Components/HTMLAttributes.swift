@@ -22,10 +22,13 @@ extension HTML {
 }
 
 public struct HTMLAttributes<Content: HTML>: HTML {
+  @usableFromInline
   let content: Content
-  var attributes: OrderedSet<HTMLAttribute>
 
   @usableFromInline
+  var attributes: OrderedSet<HTMLAttribute>
+
+  @inlinable @inline(__always)
   init(
     content: Content,
     attributes: OrderedSet<HTMLAttribute>
@@ -39,7 +42,7 @@ public struct HTMLAttributes<Content: HTML>: HTML {
     value: String? = "",
     mergeMode: HTMLAttribute.MergeMode = .replaceValue
   ) -> Self {
-    var copy: HTMLAttributes<Content> = self
+    var copy = self
     copy.attributes.append(HTMLAttribute(name: name, value: value, mergeMode: mergeMode))
     return copy
   }
@@ -50,6 +53,7 @@ public struct HTMLAttributes<Content: HTML>: HTML {
     return copy
   }
 
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -77,14 +81,16 @@ public struct HTMLAttributes<Content: HTML>: HTML {
   public var body: Never { fatalError() }
 }
 
+extension HTMLAttributes: Sendable where Content: Sendable {}
+
 extension DependencyValues {
+  private enum HTMLAttributeKey: DependencyKey {
+    static var liveValue: OrderedDictionary<String, String> { [:] }
+    static var testValue: OrderedDictionary<String, String> { [:] }
+  }
+
   var allAttributes: OrderedDictionary<String, String> {
     get { self[HTMLAttributeKey.self] }
     set { self[HTMLAttributeKey.self] = newValue }
   }
-}
-
-private enum HTMLAttributeKey: DependencyKey {
-  static var liveValue: OrderedDictionary<String, String> { [:] }
-  static var testValue: OrderedDictionary<String, String> { [:] }
 }

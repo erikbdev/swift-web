@@ -11,13 +11,13 @@ public protocol HTMLDocument: HTML {
 extension HTMLDocument {
   public var ssg: StyleSheetGenerator? { .class }
 
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ document: consuming Self,
-    stylesheet: String,
     into output: inout Output
   ) {
     let documentBody: _HTMLConditional<_HTMLBytes, Body>
-    let stylesheet: String?
+    let stylesheet: String
 
     if let ssg = document.ssg {
       var bodyBytes = _HTMLBytes()
@@ -26,11 +26,11 @@ extension HTMLDocument {
       } operation: {
         @Dependency(\.ssg) var generator
         Body._render(document.body, into: &bodyBytes)
-        return generator?.stylesheet()
+        return generator?.stylesheet() ?? ""
       }
       documentBody = .trueContent(bodyBytes)
     } else {
-      stylesheet = nil
+      stylesheet = ""
       documentBody = .falseContent(document.body)
     }
 
@@ -40,7 +40,7 @@ extension HTMLDocument {
         tag("head") {
           document.head
 
-          if let stylesheet, !stylesheet.isEmpty {
+          if !stylesheet.isEmpty {
             style {
               HTMLRaw(stylesheet)
             }
@@ -55,7 +55,7 @@ extension HTMLDocument {
   }
 }
 
-private struct _HTMLBytes: HTML, HTMLOutputStream {
+private struct _HTMLBytes: HTML, Sendable, HTMLOutputStream {
   var bytes: ContiguousArray<UInt8> = []
 
   mutating func write(_ byte: UInt8) {

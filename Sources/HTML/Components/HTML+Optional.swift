@@ -1,5 +1,5 @@
 extension Optional: HTML where Wrapped: HTML {
-  @_spi(Render) @inlinable @inline(__always)
+  @_spi(Render)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -12,3 +12,5 @@ extension Optional: HTML where Wrapped: HTML {
 
   public var body: Never { fatalError() }
 }
+
+extension Optional: Sendable where Wrapped: Sendable {}

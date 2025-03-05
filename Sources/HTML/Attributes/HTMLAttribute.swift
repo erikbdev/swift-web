@@ -22,7 +22,7 @@ public struct HTMLAttribute: Hashable, Sendable {
     Self(name: name, value: value, mergeMode: mergeMode)
   }
 
-  public enum MergeMode: Sendable {
+  public enum MergeMode: Sendable, Hashable {
     case replaceValue
     case mergeValue
     case ignoreIfSet
@@ -58,7 +58,7 @@ extension HTMLAttribute {
 
 // dir attribute
 extension HTMLAttribute {
-  public struct Direction: ExpressibleByStringLiteral, RawRepresentable {
+  public struct Direction: Hashable, Sendable, ExpressibleByStringLiteral, RawRepresentable {
     public var rawValue: String
 
     public init(stringLiteral value: String) {
@@ -81,7 +81,7 @@ extension HTMLAttribute {
 
 // meta tag attributes
 extension HTMLAttribute {
-  public struct Name: Sendable, RawRepresentable, ExpressibleByStringLiteral {
+  public struct Name: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public var rawValue: String
 
     public init(rawValue: String) {
@@ -109,7 +109,7 @@ extension HTMLAttribute {
 
 // link tag attributes
 extension HTMLAttribute {
-  public struct As: Sendable, RawRepresentable, ExpressibleByStringLiteral {
+  public struct As: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public var rawValue: String
 
     public init(rawValue: String) {
@@ -142,7 +142,7 @@ extension HTMLAttribute {
 
 // button tag attributes
 extension HTMLAttribute {
-  public struct ButtonType: Sendable, ExpressibleByStringLiteral, RawRepresentable {
+  public struct ButtonType: Hashable, Sendable, ExpressibleByStringLiteral, RawRepresentable {
     public let rawValue: String
 
     public init(rawValue: String) {
@@ -173,7 +173,7 @@ extension HTMLAttribute {
 
 // target attribute
 extension HTMLAttribute {
-  public struct Target: RawRepresentable, ExpressibleByStringLiteral {
+  public struct Target: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public let rawValue: String
 
     public init(rawValue: String) {
@@ -206,7 +206,7 @@ extension HTMLAttribute {
 
 // charset attribute
 extension HTMLAttribute {
-  public struct CharacterSet: RawRepresentable, ExpressibleByStringLiteral {
+  public struct CharacterSet: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public let rawValue: String
 
     public init(rawValue: String) {
@@ -227,7 +227,7 @@ extension HTMLAttribute {
 
 // rel attribute
 extension HTMLAttribute {
-  public struct Relationship: RawRepresentable, ExpressibleByStringLiteral {
+  public struct Relationship: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public let rawValue: String
 
     public init(rawValue: String) {
@@ -259,7 +259,7 @@ extension HTMLAttribute {
 
 // autocomplete attribute
 extension HTMLAttribute {
-  public struct AutoComplete: RawRepresentable, ExpressibleByStringLiteral {
+  public struct AutoComplete: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public let rawValue: String
 
     public init(rawValue: String) {
@@ -296,7 +296,7 @@ extension HTMLAttribute {
 
 // crossorigin attribute
 extension HTMLAttribute {
-  public struct CrossOrigin: RawRepresentable, ExpressibleByStringLiteral {
+  public struct CrossOrigin: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public let rawValue: String
 
     public init(rawValue: String) {
@@ -362,7 +362,7 @@ extension HTMLAttribute {
 
 // form tag attributes
 extension HTMLAttribute {
-  public struct Method: RawRepresentable, ExpressibleByStringLiteral {
+  public struct Method: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public let rawValue: String
 
     public init(rawValue: String) {
@@ -386,7 +386,7 @@ extension HTMLAttribute {
 
 // input tag attrributes
 extension HTMLAttribute {
-  public struct InputType: Sendable, Equatable, RawRepresentable, ExpressibleByStringLiteral {
+  public struct InputType: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public var rawValue: String
 
     public init(rawValue: String) {
@@ -451,7 +451,7 @@ extension HTMLAttribute {
 // script tag attributes
 extension HTMLAttribute {
   // type
-  public struct ScriptType: Sendable, Hashable, RawRepresentable, ExpressibleByStringLiteral {
+  public struct ScriptType: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public var rawValue: String
 
     public init(rawValue: String) {
@@ -490,7 +490,7 @@ extension HTMLAttribute {
 
 // scope attribute
 extension HTMLAttribute {
-  public struct Scope: Sendable, Hashable, RawRepresentable, ExpressibleByStringLiteral {
+  public struct Scope: Hashable, Sendable, RawRepresentable, ExpressibleByStringLiteral {
     public var rawValue: String
 
     public init(rawValue: String) {

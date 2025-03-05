@@ -1,19 +1,38 @@
 import Markdown
 
+public struct HTMLMarkdown: HTML, Sendable, ExpressibleByStringLiteral {
+  public let body: _SendableAnyHTML
+
+  public init(_ markdown: String) {
+    var converter = HTMLMarkdownConverter()
+    self.body = converter.visit(Document(parsing: markdown))
+  }
+
+  @inlinable @inline(__always)
+  public init(_ markdown: () -> String) {
+    self.init(markdown())
+  }
+
+  @inlinable @inline(__always)
+  public init(stringLiteral value: StringLiteralType) {
+    self.init(value)
+  }
+}
+
 private struct HTMLMarkdownConverter: MarkupVisitor {
-  typealias Result = AnyHTML
+  typealias Result = _SendableAnyHTML
 
   @HTMLBuilder
   mutating func defaultVisit(
     _ markup: any Markup
-  ) -> AnyHTML {
+  ) -> Result {
     for child in markup.children {
       visit(child)
     }
   }
 
   @HTMLBuilder
-  mutating func visitBlockDirective(_ blockDirective: BlockDirective) -> AnyHTML {
+  mutating func visitBlockDirective(_ blockDirective: BlockDirective) -> Result {
     // switch blockDirective
     for child in blockDirective.children {
       visit(child)
@@ -21,7 +40,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitBlockQuote(_ blockQuote: BlockQuote) -> AnyHTML {
+  mutating func visitBlockQuote(_ blockQuote: BlockQuote) -> Result {
     let aside = Aside(blockQuote)
     blockquote {
       for child in aside.content {
@@ -31,7 +50,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> AnyHTML {
+  mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> Result {
     let language = codeBlock.language.map {
       let languageInfo = $0.split(separator: ":", maxSplits: 2)
       let language = languageInfo[0]
@@ -58,7 +77,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitEmphasis(_ emphasis: Emphasis) -> AnyHTML {
+  mutating func visitEmphasis(_ emphasis: Emphasis) -> Result {
     em {
       for child in emphasis.children {
         visit(child)
@@ -67,7 +86,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitHeading(_ heading: Heading) -> AnyHTML {
+  mutating func visitHeading(_ heading: Heading) -> Result {
     switch heading.level {
     case 1: h1 {
         for child in heading.children {
@@ -108,12 +127,12 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitHTMLBlock(_ html: HTMLBlock) -> AnyHTML {
+  mutating func visitHTMLBlock(_ html: HTMLBlock) -> Result {
     HTMLRaw(html.rawHTML)
   }
 
   @HTMLBuilder
-  mutating func visitImage(_ image: Image) -> AnyHTML {
+  mutating func visitImage(_ image: Image) -> Result {
     if let source = image.source {
       a(.href(source), .target(.blank), .rel("noopener noreferrer")) {
         img(.src(source))
@@ -122,30 +141,30 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitInlineCode(_ inlineCode: InlineCode) -> AnyHTML {
+  mutating func visitInlineCode(_ inlineCode: InlineCode) -> Result {
     code {
       HTMLText(inlineCode.code)
     }
   }
 
   @HTMLBuilder
-  mutating func visitInlineHTML(_ inlineHTML: Markdown.InlineHTML) -> AnyHTML {
+  mutating func visitInlineHTML(_ inlineHTML: Markdown.InlineHTML) -> Result {
     HTMLRaw(inlineHTML.rawHTML)
   }
 
   @HTMLBuilder
-  mutating func visitLineBreak(_ lineBreak: Markdown.LineBreak) -> AnyHTML {
+  mutating func visitLineBreak(_ lineBreak: Markdown.LineBreak) -> Result {
     br()
   }
 
   @HTMLBuilder
-  mutating func visitLink(_ link: Markdown.Link) -> AnyHTML {
+  mutating func visitLink(_ link: Markdown.Link) -> Result {
     let href = link.destination ?? "/"
     let isLocalLink = href.hasPrefix("/") || href.hasPrefix("#")
     let attributes: [HTMLAttribute] = [
       .href(href),
       link.title.flatMap { .title($0) },
-      // link.title.flatMap { .aria.label($0) },
+      link.title.flatMap { .aria.label($0) },
       isLocalLink ? nil : .target(.blank),
       isLocalLink ? nil : .rel("noopener noreferrer")
     ]
@@ -159,7 +178,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitListItem(_ listItem: Markdown.ListItem) -> AnyHTML {
+  mutating func visitListItem(_ listItem: Markdown.ListItem) -> Result {
     li {
       for child in listItem.children {
         visit(child)
@@ -168,7 +187,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitOrderedList(_ orderedList: Markdown.OrderedList) -> AnyHTML {
+  mutating func visitOrderedList(_ orderedList: Markdown.OrderedList) -> Result {
     ol {
       for child in orderedList.children {
         visit(child)
@@ -177,7 +196,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitParagraph(_ paragraph: Markdown.Paragraph) -> AnyHTML {
+  mutating func visitParagraph(_ paragraph: Markdown.Paragraph) -> Result {
     p {
       for child in paragraph.children {
         visit(child)
@@ -186,12 +205,12 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitSoftBreak(_ softBreak: Markdown.SoftBreak) -> AnyHTML {
+  mutating func visitSoftBreak(_ softBreak: Markdown.SoftBreak) -> Result {
     softBreak.plainText
   }
 
   @HTMLBuilder
-  mutating func visitStrikethrough(_ strikethrough: Markdown.Strikethrough) -> AnyHTML {
+  mutating func visitStrikethrough(_ strikethrough: Markdown.Strikethrough) -> Result {
     s {
       for child in strikethrough.children {
         visit(child)
@@ -200,7 +219,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitStrong(_ mdStrong: Markdown.Strong) -> AnyHTML {
+  mutating func visitStrong(_ mdStrong: Markdown.Strong) -> Result {
     strong {
       for child in mdStrong.children {
         visit(child)
@@ -209,7 +228,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitTable(_ mdTable: Markdown.Table) -> AnyHTML {
+  mutating func visitTable(_ mdTable: Markdown.Table) -> Result {
     table {
       if !mdTable.head.isEmpty {
         thead {
@@ -240,7 +259,7 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   private mutating func render(
     cells: some Sequence<Markdown.Table.Cell>,
     columnAlignments: [Markdown.Table.ColumnAlignment?]
-  ) -> AnyHTML {
+  ) -> Result {
     var column = 0
     for cell in cells {
       if cell.colspan > 0, cell.rowspan > 0 {
@@ -258,19 +277,19 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 
   @HTMLBuilder
-  mutating func visitText(_ text: Markdown.Text) -> AnyHTML {
+  mutating func visitText(_ text: Markdown.Text) -> Result {
     HTMLText(text.string)
   }
 
   @HTMLBuilder
-  mutating func visitThematicBreak(_ thematicBreak: Markdown.ThematicBreak) -> AnyHTML {
+  mutating func visitThematicBreak(_ thematicBreak: Markdown.ThematicBreak) -> Result {
     div {
       hr()
     }
   }
 
   @HTMLBuilder
-  mutating func visitUnorderedList(_ unorderedList: Markdown.UnorderedList) -> AnyHTML {
+  mutating func visitUnorderedList(_ unorderedList: Markdown.UnorderedList) -> Result {
     ul {
       for child in unorderedList.children {
         visit(child)
@@ -279,33 +298,14 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
   }
 }
 
-public struct HTMLMarkdown: HTML, ExpressibleByStringLiteral {
-  let markdown: String
-  public let body: AnyHTML
-
-  public init(_ markdown: String) {
-    self.markdown = markdown
-    var converter = HTMLMarkdownConverter()
-    self.body = converter.visit(Document(parsing: markdown))
-  }
-
-  public init(_ markdown: () -> String) {
-    self.init(markdown())
-  }
-
-  public init(stringLiteral value: StringLiteralType) {
-    self.init(value)
-  }
-}
-
-private extension HTMLBuilder {
+extension HTMLBuilder {
   @_disfavoredOverload
-  static func buildExpression(_ expression: some HTML) -> AnyHTML {
-    AnyHTML(expression)
+  fileprivate static func buildExpression(_ expression: some HTML & Sendable) -> _SendableAnyHTML {
+    _SendableAnyHTML(expression)
   }
 
   @_disfavoredOverload
-  static func buildFinalResult(_ component: some HTML) -> AnyHTML {
-    AnyHTML(component)
+  fileprivate static func buildFinalResult(_ component: some HTML & Sendable) -> _SendableAnyHTML {
+    _SendableAnyHTML(component)
   }
 }

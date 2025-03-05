@@ -13,7 +13,6 @@ public protocol HTML {
 }
 
 extension HTML {
-  @inline(__always)
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
