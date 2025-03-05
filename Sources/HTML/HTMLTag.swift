@@ -15,7 +15,7 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
 
   @inlinable @inline(__always)
   public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
-    self.callAsFunction(attributes: [])
+    self.callAsFunction(attributes: attributes)
   }
 
   @inlinable @inline(__always)
