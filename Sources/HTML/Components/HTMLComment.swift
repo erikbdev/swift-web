@@ -13,13 +13,17 @@ public struct HTMLComment: HTML, Sendable {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLOutputStream>(
+  public static func _render<Output: HTMLByteStream>(
     _ html: consuming HTMLComment,
     into output: inout Output
   ) {
-    output.write([0x3C, 0x21, 0x2D, 0x2D])  // <!--
+    [0x3C, 0x21, 0x2D, 0x2D].withUnsafeBufferPointer { 
+      output.write($0)  // <!--      
+    }
     HTMLString._render(HTMLString(html.bytes, escape: true), into: &output)  // comment
-    output.write([0x2D, 0x2D, 0x3E])  // -->
+    [0x2D, 0x2D, 0x3E].withUnsafeBufferPointer {
+      output.write($0)  // -->
+    }
   }
 
   public var body: Never { fatalError() }

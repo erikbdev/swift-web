@@ -14,7 +14,7 @@ public struct HTMLElement<Content: HTML>: HTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLOutputStream>(
+  public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
@@ -30,7 +30,9 @@ public struct HTMLElement<Content: HTML>: HTML {
     }
     output.write(0x3C)  // <
     output.write(0x2F)  // /
-    output.write(html.tag.utf8)  // <tag-name>
+    html.tag.utf8.withContiguousStorageIfAvailable { 
+      output.write($0)  // <tag-name>
+    }
     output.write(0x3E)  // >
   }
 
@@ -48,7 +50,7 @@ public struct HTMLVoidElement: HTML, Sendable {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLOutputStream>(
+  public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
@@ -56,21 +58,31 @@ public struct HTMLVoidElement: HTML, Sendable {
     // @Dependency(\.htmlContext) var context
 
     output.write(0x3C)  // <
-    output.write(html.tag.utf8)  // tag-name
+    html.tag.utf8.withContiguousStorageIfAvailable {
+      output.write($0)  // tag-name
+    }
     for (name, value) in allAttributes {
       output.write(0x20)  // space
-      output.write(name.utf8)  // <name>
+      name.utf8.withContiguousStorageIfAvailable { 
+        output.write($0)  // <name>
+      }
       if !value.isEmpty {
         output.write(0x3D)  // =
         output.write(0x22)  // "
         for byte in value.utf8 {
           switch byte {
           case 0x28:  // &
-            output.write("&amp;".utf8)
+            "&amp;".utf8[...].withContiguousStorageIfAvailable {
+              output.write($0)
+            }
           case 0x22:  // "
-            output.write("&quot;".utf8)
+            "&quot;".utf8.withContiguousStorageIfAvailable {
+              output.write($0)
+            }
           case 0x27:  // '
-            output.write("&#39;".utf8)
+            "&#39;".utf8.withContiguousStorageIfAvailable { 
+              output.write($0)
+            }
           default:
             output.write(byte)
           }

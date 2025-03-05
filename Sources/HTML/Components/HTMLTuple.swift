@@ -8,7 +8,7 @@ public struct HTMLTuple<each Content: HTML>: HTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLOutputStream>(
+  public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {

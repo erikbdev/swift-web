@@ -6,14 +6,14 @@ public protocol HTML {
   @HTMLBuilder var body: Self.Body { get }
 
   @_spi(Render)
-  static func _render<Output: HTMLOutputStream>(
+  static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
   )
 }
 
 extension HTML {
-  public static func _render<Output: HTMLOutputStream>(
+  public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
@@ -25,7 +25,7 @@ extension Never: HTML {
   public var body: Never { fatalError() }
 
   @_spi(Render) @inlinable @inline(__always)
-  public static func _render<Output: HTMLOutputStream>(
+  public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {

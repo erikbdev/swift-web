@@ -1,26 +1,18 @@
 import Dependencies
 
-public protocol HTMLOutputStream {
-  mutating func write(_ bytes: consuming some Collection<UInt8>)
-  mutating func write(_ byte: UInt8)
+public protocol HTMLByteStream {
+  mutating func write(_ bytes: consuming UnsafeBufferPointer<UInt8>)
 }
 
-extension HTMLOutputStream {
-  public mutating func write<S: Sequence<UInt8>>(sequence: S) {
-    for byte in sequence {
-      self.write(byte)
-    }
-  }
-}
-
-extension String: HTMLOutputStream {
-  @inlinable @inline(__always)
+extension HTMLByteStream {
   public mutating func write(_ byte: UInt8) {
-    self.write([byte])
+    [byte].withUnsafeBufferPointer { self.write($0)  }
   }
+}
 
+extension String: HTMLByteStream {
   @inlinable @inline(__always)
-  public mutating func write(_ bytes: consuming some Collection<UInt8>) {
+  public mutating func write(_ bytes: consuming UnsafeBufferPointer<UInt8>) {
     self.append(String(decoding: bytes, as: UTF8.self))
   }
 }
@@ -38,7 +30,7 @@ extension HTML {
   }
 
   @inline(__always)
-  public consuming func render<Output: HTMLOutputStream>(into output: inout Output) {
+  public consuming func render<Output: HTMLByteStream>(into output: inout Output) {
     // withDependencies {
     //   $0.htmlContext = HTMLContext(config: $0.htmlConfig)
     // } operation: { [self] in

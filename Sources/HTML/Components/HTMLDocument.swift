@@ -7,8 +7,7 @@ public protocol HTMLDocument: HTML {
 }
 
 extension HTMLDocument {
-  @_spi(Render)
-  public static func _render<Output: HTMLOutputStream>(
+  public static func _render<Output: HTMLByteStream>(
     _ document: consuming Self,
     into output: inout Output
   ) {
@@ -48,7 +47,7 @@ extension HTMLDocument {
   }
 }
 
-private struct _HTMLBytes: HTML, Sendable, HTMLOutputStream {
+private struct _HTMLBytes: HTML, Sendable, HTMLByteStream {
   var bytes: ContiguousArray<UInt8> = []
 
   mutating func write(_ byte: UInt8) {
@@ -59,18 +58,20 @@ private struct _HTMLBytes: HTML, Sendable, HTMLOutputStream {
     self.bytes.append(contentsOf: bytes)
   }
 
-  static func _render<Output: HTMLOutputStream>(
+  static func _render<Output: HTMLByteStream>(
     _ html: consuming _HTMLBytes,
     into output: inout Output
   ) {
-    output.write(html.bytes)
+    html.bytes.withUnsafeBufferPointer {
+      output.write($0)
+    }
   }
 
   var body: Never { fatalError() }
 }
 
 extension HTMLBuilder {
-  fileprivate static func render<Output: HTMLOutputStream, Content: HTML>(
+  fileprivate static func render<Output: HTMLByteStream, Content: HTML>(
     into output: inout Output,
     @HTMLBuilder content: () -> Content
   ) {

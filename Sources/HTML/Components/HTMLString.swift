@@ -34,7 +34,7 @@ public struct HTMLString: HTML, Sendable, ExpressibleByStringLiteral, Expressibl
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLOutputStream>(
+  public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
@@ -44,9 +44,13 @@ public struct HTMLString: HTML, Sendable, ExpressibleByStringLiteral, Expressibl
         for byte in bytes {
           switch byte {
           case 0x26 where value.escape:  // &
-            output.write("&amp;".utf8)
+            "&amp;".utf8.withContiguousStorageIfAvailable {
+              output.write($0)
+            }
           case 0x3C where value.escape:  // <
-            output.write("&lt;".utf8)
+            "&lt;".utf8.withContiguousStorageIfAvailable {
+              output.write($0)
+            }
           default:
             output.write(byte)
           }
@@ -57,9 +61,13 @@ public struct HTMLString: HTML, Sendable, ExpressibleByStringLiteral, Expressibl
             for byte in bytes {
               switch byte {
               case 0x26 where value.escape:  // &
-                output.pointee.write("&amp;".utf8)
+                "&amp;".utf8.withContiguousStorageIfAvailable {
+                  output.pointee.write($0)
+                }
               case 0x3C where value.escape:  // <
-                output.pointee.write("&lt;".utf8)
+                "&lt;".utf8.withContiguousStorageIfAvailable { 
+                  output.pointee.write($0)
+                }
               default:
                 output.pointee.write(byte)
               }
@@ -124,7 +132,7 @@ private struct StorageValue: Sendable {
   }
 }
 
-private struct _HTMLOutputStreamProxy: HTMLOutputStream {
+private struct _HTMLOutputStreamProxy: HTMLByteStream {
   let callback: (ContiguousArray<UInt8>) -> Void
 
   mutating func write(_ bytes: consuming some Collection<UInt8>) {
