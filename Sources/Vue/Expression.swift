@@ -41,7 +41,7 @@ extension ExpressionRepresentable {
 
   public subscript(dynamicMember function: String) -> (Expression...) -> Expression {
     { args in
-      Expression(rawValue: "\(self.expression).\(function)(\(args.map(\.expression).joined(separator: ", ")))")
+      Expression(rawValue: "\(self.expression).\(function)(\(args.map(\.expression).joined(separator: ", "))")
     }
   }
 
@@ -51,7 +51,7 @@ extension ExpressionRepresentable {
 }
 
 @dynamicMemberLookup
-public struct Expression: CustomStringConvertible, ExpressionRepresentable {
+public struct Expression: Hashable, Sendable, CustomStringConvertible, ExpressionRepresentable {
   public let rawValue: String
 
   public init(rawValue: String) {
@@ -95,7 +95,7 @@ extension Expression: ExpressibleByNilLiteral {
 }
 
 extension Expression: ExpressibleByArrayLiteral {
-  public init(arrayLiteral _: Encodable...) {
+  public init(arrayLiteral elements: Encodable...) {
     rawValue = "[]"
   }
 }
@@ -107,7 +107,7 @@ extension Expression: ExpressibleByBooleanLiteral {
 }
 
 extension Expression: ExpressibleByDictionaryLiteral {
-  public init(dictionaryLiteral _: (AnyHashable, AnyHashable)...) {
+  public init(dictionaryLiteral dictionary: (Encodable, Encodable)...) {
     rawValue = "{}"
   }
 }
@@ -124,12 +124,12 @@ extension Expression: ExpressibleByIntegerLiteral {
   }
 }
 
-extension String.StringInterpolation {
+extension HTMLString.StringInterpolation {
   public mutating func appendInterpolation<E: ExpressionRepresentable>(_ expression: E) {
-    appendInterpolation("{{ \(expression.expression) }}")
+    appendInterpolation(raw: "{{ \(expression.expression) }}")
   }
 
   public mutating func appendInterpolation(_ expression: Expression) {
-    appendInterpolation("{{ \(expression.expression) }}")
+    appendInterpolation(raw: "{{ \(expression.expression) }}")
   }
 }

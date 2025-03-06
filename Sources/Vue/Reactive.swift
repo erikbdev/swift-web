@@ -1,6 +1,8 @@
+import Dependencies
+
 /// `reactive`
 @dynamicMemberLookup
-public struct Reactive: ExpressionRepresentable {
+public struct Reactive: Sendable, Hashable, ExpressionRepresentable {
   public let name: String
   public let value: Expression
 
@@ -26,16 +28,8 @@ public struct Reactive: ExpressionRepresentable {
 
   public var expression: String { name }
 
-  var statement: Statement {
-    Statement(keyword: .const, name: name, value: Expression(rawValue: "ref(\(value.expression))"))
-  }
-
-  public func assign(_ expression: Expression) -> Statement {
-    "\(name) = \(expression.expression);"
-  }
-
-  public func assign<E: ExpressionRepresentable>(_ expression: E) -> Statement {
-    "\(name) = \(expression.expression);"
+  var initializer: String {
+    "const \(name) = ref(\(value.expression));"
   }
 }
 

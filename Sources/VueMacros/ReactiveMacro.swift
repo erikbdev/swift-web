@@ -19,8 +19,6 @@ public struct ReactiveMacro: PeerMacro {
       DeclSyntax(variableDecl.projected())
     ]
   }
-
-  private enum Error: Swift.Error {}
 }
 
 extension VariableDeclSyntax {
@@ -32,7 +30,7 @@ extension VariableDeclSyntax {
       leadingTrivia: leadingTrivia,
       modifiers: modifiers,
       bindingSpecifier: TokenSyntax(
-        bindings.isComputed ? .keyword(.var) : .keyword(.let),
+        .keyword(.var),
         trailingTrivia: .space,
         presence: .present
       ),
@@ -57,51 +55,150 @@ extension PatternBindingSyntax {
     guard let identifier = pattern.as(IdentifierPatternSyntax.self) else {
       throw SwiftSyntaxMacros.MacroExpansionErrorMessage("`\(qualifiedMacroName)` requires an identifier")
     }
-    let initializer: InitializerClauseSyntax? =
-      if let initializer = self.initializer?.value {
-        InitializerClauseSyntax(value: callReactiveFunc(identifier: identifier, initializer: initializer))
-      } else {
-        nil
-      }
 
-    let accessorBlock: AccessorBlockSyntax? =
-      if self.initializer?.value == nil {
-        AccessorBlockSyntax(
-          accessors: .getter([
-            CodeBlockItemSyntax(
-              item: .expr(
-                ExprSyntax(
-                  callReactiveFunc(
-                    identifier: identifier,
-                    initializer: MemberAccessExprSyntax(
-                      base: DeclReferenceExprSyntax(baseName: .keyword(.self)),
-                      period: .periodToken(),
-                      declName: DeclReferenceExprSyntax(baseName: identifier.identifier.trimmed)
+    let reactiveVarID = TokenSyntax.identifier("_reactive")
+    let contextVarID = TokenSyntax.identifier("_context")
+
+    let accessorBlock = AccessorBlockSyntax(
+      accessors: .getter(
+        [
+          /// Dependency initializer
+          CodeBlockItemSyntax(
+            item: .decl(
+              DeclSyntax(
+                VariableDeclSyntax(
+                  attributes: [
+                    .attribute(
+                      AttributeSyntax(
+                        attributeName: IdentifierTypeSyntax(name: .identifier("Dependencies.Dependency")),
+                        leftParen: .leftParenToken(),
+                        arguments: .argumentList(
+                          LabeledExprListSyntax(
+                            [
+                              LabeledExprSyntax(
+                                expression: MemberAccessExprSyntax(
+                                  base: DeclReferenceExprSyntax(
+                                    baseName: .identifier("Vue.VueElementContext")
+                                  ),
+                                  declName: DeclReferenceExprSyntax(baseName: .keyword(.self))
+                                )
+                              )
+                            ]
+                          )
+                        ),
+                        rightParen: .rightParenToken()
+                      )
                     )
+                  ],
+                  bindingSpecifier: .keyword(.var),
+                  bindings: [
+                    PatternBindingSyntax(
+                      pattern: IdentifierPatternSyntax(
+                        identifier: contextVarID
+                      )
+                    )
+                  ]
+                )
+              )
+            )
+          ),
+          // Reactive initializer
+          CodeBlockItemSyntax(
+            item: .decl(
+              DeclSyntax(
+                VariableDeclSyntax(
+                  bindingSpecifier: .keyword(.let),
+                  bindings: [
+                    PatternBindingSyntax(
+                      pattern: IdentifierPatternSyntax(
+                        identifier: reactiveVarID
+                      ),
+                      initializer: InitializerClauseSyntax(
+                        equal: .equalToken(),
+                        value: ExprSyntax(
+                          FunctionCallExprSyntax(
+                            calledExpression: DeclReferenceExprSyntax(baseName: .identifier("\(libraryName).\(macroName)")),
+                            leftParen: .leftParenToken(),
+                            arguments: [
+                              LabeledExprSyntax(
+                                label: .identifier("name"),
+                                colon: .colonToken(),
+                                expression: StringLiteralExprSyntax(
+                                  openingQuote: .stringQuoteToken(),
+                                  segments: [.stringSegment(StringSegmentSyntax(content: .stringSegment(identifier.identifier.trimmed.description)))],
+                                  closingQuote: .stringQuoteToken()
+                                ),
+                                trailingComma: .commaToken()
+                              ),
+                              LabeledExprSyntax(
+                                label: .identifier("value"),
+                                colon: .colonToken(),
+                                expression: MemberAccessExprSyntax(
+                                  base: DeclReferenceExprSyntax(baseName: .keyword(.self)),
+                                  period: .periodToken(),
+                                  declName: DeclReferenceExprSyntax(baseName: identifier.identifier.trimmed)
+                                )
+                              ),
+                            ],
+                            rightParen: .rightParenToken()
+                          )
+                        )
+                      )
+                    )
+                  ]
+                )
+              )
+            )
+          ),
+          CodeBlockItemSyntax(
+            item: .expr(
+              ExprSyntax(
+                FunctionCallExprSyntax(
+                  calledExpression: MemberAccessExprSyntax(
+                    base: DeclReferenceExprSyntax(baseName: contextVarID),
+                    declName: DeclReferenceExprSyntax(baseName: .identifier("addProperty"))
+                  ),
+                  leftParen: .leftParenToken(),
+                  arguments: [
+                    LabeledExprSyntax(
+                      expression: DeclReferenceExprSyntax(
+                        baseName: reactiveVarID
+                      )
+                    )
+                  ],
+                  rightParen: .rightParenToken()
+                )
+              )
+            )
+          ),
+          // Return reactive
+          CodeBlockItemSyntax(
+            item: .stmt(
+              StmtSyntax(
+                ReturnStmtSyntax(
+                  returnKeyword: .keyword(.return),
+                  expression: ExprSyntax(
+                    DeclReferenceExprSyntax(baseName: reactiveVarID)
                   )
                 )
               )
             )
-          ])
-        )
-      } else {
-        nil
-      }
+          ),
+        ]
+      )
+    )
 
     return PatternBindingSyntax(
       leadingTrivia: leadingTrivia,
       pattern: IdentifierPatternSyntax(
         leadingTrivia: identifier.leadingTrivia,
         identifier: identifier.identifier.trimmed.prefixed("$"),
-        trailingTrivia: identifier.trailingTrivia
+        trailingTrivia: nil
       ),
-      typeAnnotation: accessorBlock.flatMap { _ in
-        TypeAnnotationSyntax(
-          colon: .colonToken(),
-          type: IdentifierTypeSyntax(name: .identifier("\(libraryName).\(macroName)"))
-        )
-      },
-      initializer: initializer,
+      typeAnnotation: TypeAnnotationSyntax(
+        colon: .colonToken(),
+        type: IdentifierTypeSyntax(name: .identifier("\(libraryName).\(macroName)"))
+      ),
       accessorBlock: accessorBlock,
       trailingComma: trailingComma
     )

@@ -1,8 +1,11 @@
+import Dependencies
 import Foundation
 import HTML
 
 public struct VueScript: HTML {
   let config: Configuration
+
+  @Dependency(\.vueContext) var vueContext
 
   public enum Configuration: String {
     case development = ""
@@ -10,11 +13,11 @@ public struct VueScript: HTML {
   }
 
   public init() {
-  #if DEBUG
-    self.config = .development
-  #else
-    self.config = .production
-  #endif
+    #if DEBUG
+      self.config = .development
+    #else
+      self.config = .production
+    #endif
   }
 
   public init(_ configuration: Configuration) {
@@ -23,9 +26,25 @@ public struct VueScript: HTML {
 
   public var body: some HTML {
     script(.type(.module), .defer) {
+      let components = vueContext.allComponents()
+
+      let componentVariables = components.map {
+        """
+        const \($0.key) = {
+          setup() {
+            \($0.value.refs.map(\.initializer).joined(separator: "\n"))
+            return {\($0.value.refs.map(\.name).joined(separator: ", "))}
+          },
+          template: `\($0.value.template)`
+        };
+        """
+      }
+
       HTMLRaw(
         """
         import { createApp, reactive } from 'https://unpkg.com/vue@3/dist/vue.esm-browser\(config.rawValue).js';
+
+        \(componentVariables.joined(separator: "\n"))
 
         const roots = [...document.documentElement.querySelectorAll(`[v-scope]`)]
           .filter((root) => !root.matches(`[v-scope] [v-scope]`));
@@ -38,6 +57,14 @@ public struct VueScript: HTML {
           createApp({
             setup: reactive.bind(null, new Function(`return(${expr})`)())
           })
+          \(
+            components.map { 
+              """
+              .component("\($0.value.name)", \($0.key))
+              """
+            }
+            .joined(separator: "\n")
+           )
           .mount(root)
         }
         """
@@ -46,35 +73,45 @@ public struct VueScript: HTML {
   }
 }
 
-// struct VueOperation: ExpressibleByStringLiteral, ExpressibleByStringInterpolation {
-//   let rawValue: String
+public struct VueDocument<Head: HTML, Body: HTML>: HTMLDocument {
+  public var head: Head
+  public var body: Body
 
-//   init() {
-//     rawValue = ""
-//   }
+  public init(
+    @HTMLBuilder head: () -> Head,
+    @HTMLBuilder body: () -> Body
+  ) {
+    self.head = head()
+    self.body = body()
+  }
 
-//   init(stringLiteral value: String) {
-//     rawValue = value
-//   }
+  public static func _render<Output: HTMLByteStream>(
+    _ document: Self,
+    into output: inout Output
+  ) {
+    withDependencies {
+      $0.vueContext = .liveValue
+    } operation: {
+      BaseDocument._render(
+        BaseDocument(
+          head: document.head,
+          body: HTMLGroup {
+            document.body
+            VueScript()
+          }
+        ),
+        into: &output
+      )
+    }
+  }
+}
 
-//   func assign(_ value: VueOperation) -> VueOperation {
-//     VueOperation()
-//   }
+private struct BaseDocument<Head: HTML, Body: HTML>: HTMLDocument {
+  var head: Head
+  var body: Body
+}
 
-//   func assign<S>(_ value: VueState<S>) -> VueOperation {
-//     VueOperation()
-//   }
-
-//   static prefix func ! (_ self: Self) -> VueOperation {
-//     VueOperation()
-//   }
-// }
-
-// protocol VueComponent: HTML where Content == Never {
-//   associatedtype Body: HTML
-
-//   var body: Body { get }
-// }
+extension VueDocument: Sendable where Head: Sendable, Body: Sendable {}
 
 extension HTMLAttribute {
   /// A namespace for VueJS attributes.
@@ -85,7 +122,7 @@ extension HTMLAttribute {
 }
 
 extension HTMLAttribute.Vue {
-  public struct OnEventModifier {
+  public struct OnEventModifier: Sendable, Hashable {
     fileprivate let chain: [String]
 
     private init(_ modifier: String = #function) {
@@ -123,29 +160,53 @@ extension HTMLAttribute.Vue {
     }
   }
 
+  public struct ModelModifier: Sendable, Hashable {
+    fileprivate let chain: [String]
+
+    private init(_ modifier: String = #function) {
+      self.chain = [modifier]
+    }
+
+    private init(_ chain: [String]) {
+      self.chain = chain
+    }
+
+    public var `lazy`: Self { add() }
+    public var number: Self { add() }
+    public var trim: Self { add() }
+
+    public static var `lazy`: Self { Self() }
+    public static var number: Self { Self() }
+    public static var trim: Self { Self() }
+
+    private func add(_ modifier: String = #function) -> Self {
+      Self(chain + [modifier])
+    }
+  }
+
   /// Update the element's text content.
   public func text<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(script.expression)
+    directive(name: "text", script.expression)
   }
 
   /// Update the element's innerHTML.
   public func html<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(script.expression)
+    directive(name: "html", script.expression)
   }
 
   /// Toggle the element's visibility based on the truthy-ness of the expression value.
   public func show<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(script.expression)
+    directive(name: "show", script.expression)
   }
 
   /// Conditionally render an element or a template fragment based on the truthy-ness of the expression value.
   public func `if`<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(script.expression)
+    directive(name: "if", script.expression)
   }
 
   /// Denote the "else block" for ``v-if`` or a ``v-if`` / ``v-else-if`` chain.
   public var `else`: HTMLAttribute {
-    directive()
+    directive(name: "else")
   }
 
   /// Denote the "else if block" for ``v-if``. Can be chained.
@@ -159,66 +220,91 @@ extension HTMLAttribute.Vue {
   }
 
   /// Attach an event listener to the element.
-  public func on<S: StatementRepresentable, Event: HTMLEventValue>(
+  public func on<Event: HTMLEventValue>(
     _ event: Event,
     modifiers: OnEventModifier? = nil,
-    _ script: S
+    _ script: Expression
   ) -> HTMLAttribute {
-    directive(name: "on:\(event.rawValue)\(modifiers.flatMap { ".\($0.chain.joined(separator: "."))" } ?? "")", script.statement)
+    directive(
+      name: "on",
+      argument: event.rawValue,
+      modifiers: modifiers.flatMap { $0.chain } ?? [],
+      script.expression
+    )
   }
 
   /// Dynamically bind one or more attributes, or a component prop to an expression.
   public func bind<E: ExpressionRepresentable>(
-    _ attrOrProp: String,
+    attrOrProp: String,
     _ script: E
   ) -> HTMLAttribute {
-    directive(name: "bind:\(attrOrProp)", script.expression)
+    directive(
+      name: "bind",
+      argument: attrOrProp,
+      script.expression
+    )
   }
 
-  public func bind<E: ExpressionRepresentable>(
-    _ script: E
-  ) -> HTMLAttribute {
-    directive(script.expression)
+  public func bind<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
+    directive(name: "bind", script.expression)
   }
 
   /// Create a two-way binding on a form input element or a component.
   public func model<E: ExpressionRepresentable>(
-    _ attribute: String? = nil,
-    _ modifiers: String? = nil,
+    modifiers: ModelModifier? = nil,
     _ script: E
   ) -> HTMLAttribute {
-    directive(script.expression)
+    directive(
+      name: "model",
+      modifiers: modifiers?.chain ?? [],
+      script.expression
+    )
   }
 
   /// Denote named slots or scoped slots that expect to receive props.
-  public func slot<E: ExpressionRepresentable>(name: String? = nil, _ script: E? = nil) -> HTMLAttribute {
-    directive(name: "slot\(name.flatMap { ":\($0)" } ?? "" )", script?.expression)
+  public func slot<E: ExpressionRepresentable>(
+    name: String? = nil,
+    _ script: E? = nil
+  ) -> HTMLAttribute {
+    directive(
+      name: "slot",
+      argument: name ?? "",
+      script?.expression
+    )
   }
 
   /// Skip compilation for this element and all its children.
   public var pre: HTMLAttribute {
-    directive()
+    directive(name: "pre")
   }
 
   /// Render the element and component once only, and skip future updates.
   public var once: HTMLAttribute {
-    directive()
+    directive(name: "once")
   }
 
   /// Used to hide un-compiled template until it is ready.
   public var cloak: HTMLAttribute {
-    directive()
+    directive(name: "cloak")
   }
 
   /// Used as a replacement for `#app`, works the same way as `v-scope` in `petite-vue`
   public func scope(_ script: Expression) -> HTMLAttribute {
-    directive(script.expression)
+    directive(
+      name: "scope",
+      script.expression
+    )
   }
 
   private func directive(
-    name: String = #function,
-    _ script: String? = nil
+    name: String,
+    argument: String = "",
+    modifiers: [String] = [],
+    _ value: String? = nil
   ) -> HTMLAttribute {
-    .init(name: "v-\(name.components(separatedBy: "(").first ?? name)", value: script)
+    HTMLAttribute(
+      name: "v-\(name)\(argument.isEmpty ? "" : ":\(argument)")\(modifiers.isEmpty ? "" : ".\(modifiers.joined(separator: "."))")",
+      value: value
+    )
   }
 }
