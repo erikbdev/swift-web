@@ -1,4 +1,4 @@
-public protocol HTMLEventValue: Sendable, Hashable, RawRepresentable, ExpressibleByStringLiteral {}
+public protocol HTMLEventValue: Sendable, Hashable, RawRepresentable, ExpressibleByStringLiteral where RawValue == String {}
 
 extension HTMLAttribute {
   public struct MouseEvent: HTMLEventValue {

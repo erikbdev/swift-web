@@ -18,16 +18,26 @@ public struct HTMLElement<Content: HTML>: HTML {
     _ html: consuming Self,
     into output: inout Output
   ) {
+    @Dependency(\.htmlContext) var context
+
     HTMLVoidElement._render(
       HTMLVoidElement(tag: html.tag),
       into: &output
     )
-
     withDependencies {
       $0.allAttributes.removeAll()
+      // $0.htmlContext.depth += 1
     } operation: {
       Content._render(html.content, into: &output)
     }
+    // if !inlineTags.contains(html.tag) {
+    //   context.config.newLine.utf8.withContiguousStorageIfAvailable {
+    //     output.write($0)
+    //   }
+    //   context.currentIndentation.utf8.withContiguousStorageIfAvailable {
+    //     output.write($0)
+    //   }
+    // }
     output.write(0x3C)  // <
     output.write(0x2F)  // /
     html.tag.utf8.withContiguousStorageIfAvailable { 
@@ -55,7 +65,16 @@ public struct HTMLVoidElement: HTML, Sendable {
     into output: inout Output
   ) {
     @Dependency(\.allAttributes) var allAttributes
-    // @Dependency(\.htmlContext) var context
+    @Dependency(\.htmlContext) var context
+
+    // if !inlineTags.contains(html.tag) {
+      // context.config.newLine.utf8.withContiguousStorageIfAvailable {
+      //   output.write($0)
+      // }
+      // context.currentIndentation.utf8.withContiguousStorageIfAvailable {
+      //   output.write($0)
+      // }
+    // }
 
     output.write(0x3C)  // <
     html.tag.utf8.withContiguousStorageIfAvailable {
@@ -95,3 +114,39 @@ public struct HTMLVoidElement: HTML, Sendable {
 
   public var body: Never { fatalError() }
 }
+
+private let inlineTags: Set<String> = [
+  "a",
+  "abbr",
+  "acronym",
+  "b",
+  "bdo",
+  "big",
+  "br",
+  "button",
+  "cite",
+  "code",
+  "dfn",
+  "em",
+  "i",
+  "img",
+  "input",
+  "kbd",
+  "label",
+  "map",
+  "object",
+  "output",
+  "q",
+  "samp",
+  "script",
+  "select",
+  "small",
+  "span",
+  "strong",
+  "sub",
+  "sup",
+  "textarea",
+  "time",
+  "tt",
+  "var",
+]
