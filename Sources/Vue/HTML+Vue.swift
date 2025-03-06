@@ -42,7 +42,7 @@ public struct VueScript: HTML {
 
       HTMLRaw(
         """
-        import { createApp, reactive } from 'https://unpkg.com/vue@3/dist/vue.esm-browser\(config.rawValue).js';
+        import { createApp, reactive, ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser\(config.rawValue).js';
 
         \(componentVariables.joined(separator: "\n"))
 
