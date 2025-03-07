@@ -33,6 +33,10 @@ public struct Reactive: Sendable, Hashable, ExpressionRepresentable {
   }
 }
 
+extension Reactive: CustomStringConvertible {
+  public var description: String { self.expression }
+}
+
 extension HTMLBuilder {
   public static func buildExpression(_ reactive: Reactive) -> HTMLString {
     HTMLString(raw: "{{ \(reactive.name) }}")

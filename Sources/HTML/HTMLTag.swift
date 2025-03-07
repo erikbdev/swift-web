@@ -165,7 +165,7 @@ public func script(
   @StringBuilder stript stringValue: () -> String = { "" }
 ) -> HTMLAttributes<HTMLElement<HTMLString>> {
   HTMLAttributes(
-    content: HTMLElement(tag: "style") {
+    content: HTMLElement(tag: "script") {
       HTMLString(raw: stringValue())
     },
     attributes: OrderedSet(attributes)
@@ -183,7 +183,7 @@ public func style(
   @StringBuilder style stringValue: () -> String = { "" }
 ) -> HTMLAttributes<HTMLElement<HTMLString>> {
   HTMLAttributes(
-    content: HTMLElement(tag: "script") {
+    content: HTMLElement(tag: "style") {
       HTMLString(raw: stringValue())
     },
     attributes: OrderedSet(attributes)
