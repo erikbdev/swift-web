@@ -3,72 +3,66 @@ import Foundation
 import HTML
 
 public struct VueScript: HTML {
-  let config: Configuration
+  let isProd: Bool
 
   @Dependency(\.vueContext) var vueContext
 
-  public enum Configuration: String {
-    case development = ""
-    case production = "prod"
-  }
-
   public init() {
     #if DEBUG
-      self.config = .development
+      self.isProd = false
     #else
-      self.config = .production
+      self.isProd = true
     #endif
   }
 
-  public init(_ configuration: Configuration) {
-    self.config = configuration
+  public init(releaseMode: Bool) {
+    self.isProd = releaseMode
   }
 
   public var body: some HTML {
     script(.type(.module), .defer) {
       let components = vueContext.allComponents()
 
-      let componentVariables = components.map {
+      """
+      import { createApp, reactive, ref } from "https://unpkg.com/vue@3/dist/vue.esm-browser\(isProd ? ".prod" : "").js";
+      """
+
+      for (name, value) in components {
         """
-        const \($0.key) = {
+        const \(name) = {
           setup() {
-            \($0.value.refs.map(\.initializer).joined(separator: "\n"))
-            return {\($0.value.refs.map(\.name).joined(separator: ", "))}
+            \(value.refs.map(\.initializer).joined(separator: "\n"))
+            return {\(value.refs.map(\.name).joined(separator: ", "))}
           },
-          template: `\($0.value.template)`
+          template: `\(value.template)`
         };
         """
       }
 
-      HTMLRaw(
+      """
+      const roots = [...document.documentElement.querySelectorAll(`[v-scope]`)]
+        .filter((root) => !root.matches(`[v-scope] [v-scope]`));
+
+      // Similar to how `v-scope` works in `petite-vue`
+      for (const root of roots) {
+        const expr = root.getAttribute('v-scope');
+        root.removeAttribute('v-scope');
+        if (!expr) continue;
+        createApp({
+          setup: reactive.bind(null, new Function(`return(${expr})`)())
+        })
+      """
+
+      for (name, props) in components {
         """
-        import { createApp, reactive, ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser\(config.rawValue).js';
-
-        \(componentVariables.joined(separator: "\n"))
-
-        const roots = [...document.documentElement.querySelectorAll(`[v-scope]`)]
-          .filter((root) => !root.matches(`[v-scope] [v-scope]`));
-
-        // Similar to how `v-scope` works in `petite-vue`
-        for (const root of roots) {
-          const expr = root.getAttribute('v-scope');
-          root.removeAttribute('v-scope');
-          if (!expr) continue;
-          createApp({
-            setup: reactive.bind(null, new Function(`return(${expr})`)())
-          })
-          \(
-            components.map { 
-              """
-              .component("\($0.value.name)", \($0.key))
-              """
-            }
-            .joined(separator: "\n")
-           )
-          .mount(root)
-        }
+          .component("\(props.name)", \(name))
         """
-      )
+      }
+
+      """
+        .mount(root)
+      }
+      """
     }
   }
 }

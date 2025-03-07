@@ -35,7 +35,7 @@ public struct Reactive: Sendable, Hashable, ExpressionRepresentable {
 
 extension HTMLBuilder {
   public static func buildExpression(_ reactive: Reactive) -> HTMLString {
-    HTMLRaw("{{ \(reactive.name) }}")
+    HTMLString(raw: "{{ \(reactive.name) }}")
   }
 }
 

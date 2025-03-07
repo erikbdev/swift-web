@@ -112,6 +112,39 @@ extension HTMLString {
   }
 }
 
+@resultBuilder
+public enum StringBuilder {
+  @inlinable @inline(__always)
+  public static func buildPartialBlock(first: String) -> String {
+    first
+  }
+
+  @inlinable @inline(__always)
+  public static func buildPartialBlock(accumulated: String, next: String) -> String {
+    accumulated + "\n" + next
+  }
+
+  @inlinable @inline(__always)
+  public static func buildEither(first component: String) -> String {
+    component
+  }
+
+  @inlinable @inline(__always)
+  public static func buildEither(second component: String) -> String {
+    component
+  }
+
+  @inlinable @inline(__always)
+  public static func buildOptional(_ component: String?) -> String {
+    component ?? ""
+  }
+
+  @inlinable @inline(__always)
+  public static func buildArray(_ components: [String]) -> String {
+    components.joined(separator: "\n")
+  }
+}
+
 private struct StorageValue: Sendable {
   let element: Element
   let escape: Bool

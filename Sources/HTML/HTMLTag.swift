@@ -160,7 +160,17 @@ public var rt: HTMLTag { #function }
 public var ruby: HTMLTag { #function }
 public var s: HTMLTag { #function }
 public var samp: HTMLTag { #function }
-public var script: HTMLTag { #function }
+public func script(
+  _ attributes: HTMLAttribute..., 
+  @StringBuilder stript stringValue: () -> String = { "" }
+) -> HTMLAttributes<HTMLElement<HTMLString>> {
+  HTMLAttributes(
+    content: HTMLElement(tag: "script") {
+      HTMLString(raw: stringValue())
+    },
+    attributes: OrderedSet(attributes)
+  )
+}
 public var section: HTMLTag { #function }
 public var select: HTMLTag { #function }
 public var small: HTMLTag { #function }
@@ -168,6 +178,17 @@ public var source: HTMLVoidTag { #function }
 public var span: HTMLTag { #function }
 public var strong: HTMLTag { #function }
 public var style: HTMLTag { #function }
+public func style(
+  _ attributes: HTMLAttribute..., 
+  @StringBuilder style stringValue: () -> String = { "" }
+) -> HTMLAttributes<HTMLElement<HTMLString>> {
+  HTMLAttributes(
+    content: HTMLElement(tag: "script") {
+      HTMLString(raw: stringValue())
+    },
+    attributes: OrderedSet(attributes)
+  )
+}
 public var sub: HTMLTag { #function }
 public var summary: HTMLTag { #function }
 public var sup: HTMLTag { #function }
