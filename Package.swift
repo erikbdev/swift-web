@@ -74,8 +74,7 @@ let package = Package(
       name: "Vue",
       dependencies: [
         "HTML",
-        "VueMacros",
-        .product(name: "Dependencies", package: "swift-dependencies"),
+        "VueMacros"
       ]
     ),
     .testTarget(

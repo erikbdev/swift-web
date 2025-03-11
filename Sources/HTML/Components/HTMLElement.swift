@@ -90,7 +90,7 @@ public struct HTMLVoidElement: HTML, Sendable {
         output.write(0x22)  // "
         for byte in value.utf8 {
           switch byte {
-          case 0x28:  // &
+          case 0x26:  // &
             "&amp;".utf8[...].withContiguousStorageIfAvailable {
               output.write($0)
             }

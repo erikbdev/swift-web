@@ -1,111 +1,16 @@
 import Dependencies
-import Foundation
 import HTML
 
-public struct VueScript: HTML {
-  let isProd: Bool
-
-  @Dependency(\.vueContext) var vueContext
-
-  public init() {
-    #if DEBUG
-      self.isProd = false
-    #else
-      self.isProd = true
-    #endif
-  }
-
-  public init(releaseMode: Bool) {
-    self.isProd = releaseMode
-  }
-
-  public var body: some HTML {
+struct VueScript: HTML {
+  var body: some HTML {
     script(.type(.module), .defer) {
-      let components = vueContext.allComponents()
-
       """
-      import { createApp, reactive, ref } from "https://unpkg.com/vue@3/dist/vue.esm-browser\(isProd ? ".prod" : "").js";
-      """
-
-      for (name, value) in components {
-        """
-        const \(name) = {
-          setup() {
-            \(value.refs.map(\.initializer).joined(separator: "\n"))
-            return {\(value.refs.map(\.name).joined(separator: ", "))}
-          },
-          template: `\(value.template)`
-        };
-        """
-      }
-
-      """
-      const roots = [...document.documentElement.querySelectorAll(`[v-scope]`)]
-        .filter((root) => !root.matches(`[v-scope] [v-scope]`));
-
-      // Similar to how `v-scope` works in `petite-vue`
-      for (const root of roots) {
-        const expr = root.getAttribute('v-scope');
-        root.removeAttribute('v-scope');
-        if (!expr) continue;
-        createApp({
-          setup: reactive.bind(null, new Function(`return(${expr})`)())
-        })
-      """
-
-      for (name, props) in components {
-        """
-          .component("\(props.name)", \(name))
-        """
-      }
-
-      """
-        .mount(root)
-      }
+      import { createApp } from "https://unpkg.com/petite-vue@0.4.1/dist/petite-vue.es.js";
+      createApp().mount();
       """
     }
   }
 }
-
-public struct VueDocument<Head: HTML, Body: HTML>: HTMLDocument {
-  public var head: Head
-  public var body: Body
-
-  public init(
-    @HTMLBuilder head: () -> Head,
-    @HTMLBuilder body: () -> Body
-  ) {
-    self.head = head()
-    self.body = body()
-  }
-
-  public static func _render<Output: HTMLByteStream>(
-    _ document: Self,
-    into output: inout Output
-  ) {
-    withDependencies {
-      $0.vueContext = .liveValue
-    } operation: {
-      BaseDocument._render(
-        BaseDocument(
-          head: document.head,
-          body: HTMLGroup {
-            document.body
-            VueScript()
-          }
-        ),
-        into: &output
-      )
-    }
-  }
-}
-
-private struct BaseDocument<Head: HTML, Body: HTML>: HTMLDocument {
-  var head: Head
-  var body: Body
-}
-
-extension VueDocument: Sendable where Head: Sendable, Body: Sendable {}
 
 extension HTMLAttribute {
   /// A namespace for VueJS attributes.
@@ -179,23 +84,23 @@ extension HTMLAttribute.Vue {
   }
 
   /// Update the element's text content.
-  public func text<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(name: "text", script.expression)
+  public func text(_ script: Expression) -> HTMLAttribute {
+    directive(name: "text", script.rawValue)
   }
 
   /// Update the element's innerHTML.
-  public func html<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(name: "html", script.expression)
+  public func html(_ script: Expression) -> HTMLAttribute {
+    directive(name: "html", script.rawValue)
   }
 
   /// Toggle the element's visibility based on the truthy-ness of the expression value.
-  public func show<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(name: "show", script.expression)
+  public func show(_ script: Expression) -> HTMLAttribute {
+    directive(name: "show", script.rawValue)
   }
 
   /// Conditionally render an element or a template fragment based on the truthy-ness of the expression value.
-  public func `if`<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(name: "if", script.expression)
+  public func `if`(_ script: Expression) -> HTMLAttribute {
+    directive(name: "if", script.rawValue)
   }
 
   /// Denote the "else block" for ``v-if`` or a ``v-if`` / ``v-else-if`` chain.
@@ -204,13 +109,13 @@ extension HTMLAttribute.Vue {
   }
 
   /// Denote the "else if block" for ``v-if``. Can be chained.
-  public func elseIf<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(name: "else-if", script.expression)
+  public func elseIf(_ script: Expression) -> HTMLAttribute {
+    directive(name: "else-if", script.rawValue)
   }
 
   /// Render the element or template block multiple times based on the source data.
-  public func `for`<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(name: "else-if", script.expression)
+  public func `for`(_ script: Expression) -> HTMLAttribute {
+    directive(name: "else-if", script.rawValue)
   }
 
   /// Attach an event listener to the element.
@@ -223,47 +128,47 @@ extension HTMLAttribute.Vue {
       name: "on",
       argument: event.rawValue,
       modifiers: modifiers.flatMap { $0.chain } ?? [],
-      script.expression
+      script.rawValue
     )
   }
 
   /// Dynamically bind one or more attributes, or a component prop to an expression.
-  public func bind<E: ExpressionRepresentable>(
+  public func bind(
     attrOrProp: String,
-    _ script: E
+    _ script: Expression
   ) -> HTMLAttribute {
     directive(
       name: "bind",
       argument: attrOrProp,
-      script.expression
+      script.rawValue
     )
   }
 
-  public func bind<E: ExpressionRepresentable>(_ script: E) -> HTMLAttribute {
-    directive(name: "bind", script.expression)
+  public func bind(_ script: Expression) -> HTMLAttribute {
+    directive(name: "bind", script.rawValue)
   }
 
   /// Create a two-way binding on a form input element or a component.
-  public func model<E: ExpressionRepresentable>(
+  public func model(
     modifiers: ModelModifier? = nil,
-    _ script: E
+    _ script: Expression
   ) -> HTMLAttribute {
     directive(
       name: "model",
       modifiers: modifiers?.chain ?? [],
-      script.expression
+      script.rawValue
     )
   }
 
   /// Denote named slots or scoped slots that expect to receive props.
-  public func slot<E: ExpressionRepresentable>(
+  public func slot(
     name: String? = nil,
-    _ script: E? = nil
+    _ script: Expression? = nil
   ) -> HTMLAttribute {
     directive(
       name: "slot",
       argument: name ?? "",
-      script?.expression
+      script?.rawValue
     )
   }
 
@@ -283,10 +188,10 @@ extension HTMLAttribute.Vue {
   }
 
   /// Used as a replacement for `#app`, works the same way as `v-scope` in `petite-vue`
-  public func scope(_ script: Expression) -> HTMLAttribute {
+  public func scope(_ expression: Expression) -> HTMLAttribute {
     directive(
       name: "scope",
-      script.expression
+      expression.rawValue
     )
   }
 

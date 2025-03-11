@@ -29,7 +29,7 @@ public struct HTMLAttributes<Content: HTML>: HTML {
   var attributes: OrderedSet<HTMLAttribute>
 
   @inlinable @inline(__always)
-  init(
+  public init(
     content: Content,
     attributes: OrderedSet<HTMLAttribute>
   ) {
@@ -89,7 +89,7 @@ extension DependencyValues {
     static var testValue: OrderedDictionary<String, String> { [:] }
   }
 
-  var allAttributes: OrderedDictionary<String, String> {
+  public var allAttributes: OrderedDictionary<String, String> {
     get { self[HTMLAttributeKey.self] }
     set { self[HTMLAttributeKey.self] = newValue }
   }
