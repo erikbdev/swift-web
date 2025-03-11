@@ -1,8 +1,8 @@
 import Dependencies
 import HTML
 
-struct VueScript: HTML {
-  var body: some HTML {
+public struct VueScript: HTML {
+  public var body: some HTML {
     script(.type(.module), .defer) {
       """
       import { createApp } from "https://unpkg.com/petite-vue@0.4.1/dist/petite-vue.es.js";
