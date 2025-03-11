@@ -163,7 +163,7 @@ extension HTMLAttribute.Vue {
   /// Denote named slots or scoped slots that expect to receive props.
   public func slot(
     name: String? = nil,
-    _ script: Expression? = nil
+    _ script: Expression? = ""
   ) -> HTMLAttribute {
     directive(
       name: "slot",
@@ -199,7 +199,7 @@ extension HTMLAttribute.Vue {
     name: String,
     argument: String = "",
     modifiers: [String] = [],
-    _ value: String? = nil
+    _ value: String? = ""
   ) -> HTMLAttribute {
     HTMLAttribute(
       name: "v-\(name)\(argument.isEmpty ? "" : ":\(argument)")\(modifiers.isEmpty ? "" : ".\(modifiers.joined(separator: "."))")",

@@ -136,6 +136,16 @@ extension Expression {
   public static func == (lhs: Self, rhs: Self) -> Self {
     Self(rawValue: "\(lhs.rawValue) == \(rhs.rawValue)")
   }
+
+  @inlinable @inline(__always)
+  public static func != (lhs: Self, rhs: Self) -> Self {
+    Self(rawValue: "\(lhs.rawValue) != \(rhs.rawValue)")
+  }
+
+  @inlinable @inline(__always)
+  public static func === (lhs: Self, rhs: Self) -> Self {
+    Self(rawValue: "\(lhs.rawValue) === \(rhs.rawValue)")
+  }
 }
 
 extension Expression: ExpressibleByStringLiteral {
