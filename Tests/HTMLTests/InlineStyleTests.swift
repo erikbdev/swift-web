@@ -81,4 +81,68 @@ struct InlineStyleTests {
     #expect(html == #"<p style="color: red;"></p>"#)
     #expect(stylesheet == nil)
   }
+
+  @Test func sameStyleGroupedClasses() async throws {
+    @Dependency(\.ssg) var ssg
+    let (html, stylesheet) = withDependencies {
+      $0.ssg = .groupedStyles
+    } operation: {
+      (
+        p {
+          span()
+            .inlineStyle("color", "red")
+            .inlineStyle("background", "white")
+        }
+        .inlineStyle("color", "red")
+        .inlineStyle("background", "white")
+        .render(),
+        ssg?.stylesheet()
+      )
+    }
+
+    #expect(html == #"<p class="c0"><span class="c0"></span></p>"#)
+    #expect(stylesheet == #".c0{color:red;background:white;}"#)
+  }
+
+  @Test func diffStyleGroupedClasses() async throws {
+    @Dependency(\.ssg) var ssg
+    let (html, stylesheet) = withDependencies {
+      $0.ssg = .groupedStyles
+    } operation: {
+      (
+        p {
+          span()
+            .inlineStyle("color", "green")
+            .inlineStyle("background", "white")
+        }
+        .inlineStyle("color", "red")
+        .inlineStyle("background", "white")
+        .render(),
+        ssg?.stylesheet()
+      )
+    }
+
+    #expect(html == #"<p class="c0"><span class="c1"></span></p>"#)
+    #expect(stylesheet == #".c0{color:red;background:white;}.c1{color:green;background:white;}"#)
+  }
+
+  @Test func mediaGroupedClass() async throws {
+    @Dependency(\.ssg) var ssg
+    let (html, stylesheet) = withDependencies {
+      $0.ssg = .groupedStyles
+    } operation: {
+      (
+        p {}
+        .inlineStyle("color", "red")
+        .inlineStyle("background", "white")
+        .inlineStyle("font-size", "1em", post: "[value]")
+        .inlineStyle("background", "green", media: .all)
+        .render(),
+        ssg?.stylesheet()
+      )
+    }
+
+    #expect(html == #"<p class="c0"></p>"#)
+    #expect(stylesheet == #".c0{color:red;background:white;}.c0[value]{font-size:1em;}@media all{.c0{background:green;}}"#)
+  }
 }

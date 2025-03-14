@@ -8,9 +8,9 @@ extension HTML {
     _ property: String,
     _ value: String?,
     media mediaQuery: InlineStyle.MediaQuery? = nil,
-    pre: String? = nil,
+    pre: InlineStyle.Selector = "",
     pseudo: InlineStyle.Pseudo? = nil,
-    post: String? = nil
+    post: InlineStyle.Selector = ""
   ) -> HTMLInlineStyle<Self> {
     HTMLInlineStyle(
       content: self,
@@ -20,9 +20,9 @@ extension HTML {
             property: property,
             value: $0,
             media: mediaQuery,
-            pre: pre,
-            pseudo: pseudo,
-            post: post
+            preSelector: pre,
+            pseudoSelector: pseudo,
+            postSelector: post
           )
         ]
       } ?? []
@@ -38,9 +38,9 @@ public struct HTMLInlineStyle<Content: HTML>: HTML {
     _ property: String,
     _ value: String?,
     media mediaQuery: InlineStyle.MediaQuery? = nil,
-    pre: String? = nil,
+    pre: InlineStyle.Selector = "",
     pseudo: InlineStyle.Pseudo? = nil,
-    post: String? = nil
+    post: InlineStyle.Selector = ""
   ) -> Self {
     var copy = self
     if let value {
@@ -49,9 +49,9 @@ public struct HTMLInlineStyle<Content: HTML>: HTML {
           property: property,
           value: value,
           media: mediaQuery,
-          pre: pre,
-          pseudo: pseudo,
-          post: post
+          preSelector: pre,
+          pseudoSelector: pseudo,
+          postSelector: post
         )
       )
     }
@@ -95,9 +95,25 @@ public struct InlineStyle: Sendable, Hashable {
   let property: String
   let value: String
   let media: MediaQuery?
-  let pre: String?
-  let pseudo: Pseudo?
-  let post: String?
+  let preSelector: Selector
+  let pseudoSelector: Pseudo?
+  let postSelector: Selector
+
+  public struct Selector: Sendable, Hashable, ExpressibleByStringLiteral {
+    public let rawValue: String
+
+    public init(
+      leadingSpace: Bool = false,
+      _ selector: String,
+      trailingSpace: Bool = false
+    ) {
+      self.rawValue = "\(leadingSpace ? " " : "")\(selector)\(trailingSpace ? " " : "")"
+    }
+
+    public init(stringLiteral value: StringLiteralType) {
+      self.init(value)
+    }
+  }
 
   public struct Pseudo: Sendable, Hashable {
     private var name: String
@@ -105,12 +121,12 @@ public struct InlineStyle: Sendable, Hashable {
 
     var rawValue: String { ":\(self.isElement ? ":" : "")\(self.name)" }
 
-    private init(element: Bool, name: String = #function) {
+    public init(element: Bool, name: String = #function) {
       self.name = name
       self.isElement = element
     }
 
-    private init(class: Bool, name: String = #function) {
+    public init(class: Bool, name: String = #function) {
       self.name = name
       self.isElement = !`class`
     }
@@ -187,34 +203,69 @@ public struct StyleSheetGenerator: Sendable {
 }
 
 extension StyleSheetGenerator {
-  // TBD: add support for stylesheet generation based on list of styles
-  // public static var grouped: StyleSheetGenerator {
-  //   // let usedStyles = LockIsolated<OrderedSet<InlineStyle>>([])
-  //   let rulesets = LockIsolated<OrderedDictionary<InlineStyle.MediaQuery?, OrderedDictionary<String, String>>>([:])
+  private struct HashedSelector: Hashable {
+    let preSelector: InlineStyle.Selector
+    let pseudoSelector: InlineStyle.Pseudo?
+    let postSelector: InlineStyle.Selector
 
-  //   return Self(
-  //     generate: { styles in [] },
-  //     stylesheet: {
-  //       rulesets.withValue { rulesets in
-  //         var sheet = ""
-  //         for (mediaQuery, styles) in rulesets.sorted(by: { $0.key == nil ? $1.key != nil : false }) {
-  //           if let mediaQuery {
-  //             sheet.append("@media \(mediaQuery.rawValue){")
-  //           }
-  //           defer {
-  //             if mediaQuery != nil {
-  //               sheet.append("}")
-  //             }
-  //           }
-  //           for (className, style) in styles {
-  //             sheet.append("\(className){\(style)}")
-  //           }
-  //         }
-  //         return sheet
-  //       }
-  //      }
-  //   )
-  // }
+    init?(_ style: InlineStyle) {
+      if style.preSelector.rawValue.isEmpty, 
+        style.pseudoSelector?.rawValue.isEmpty ?? true, 
+        style.postSelector.rawValue.isEmpty {
+        return nil
+      } else {
+        self.preSelector = style.preSelector
+        self.postSelector = style.postSelector
+        self.pseudoSelector = style.pseudoSelector
+      }
+    }
+  }
+
+  public static var groupedStyles: StyleSheetGenerator {
+    let usedStyles = LockIsolated<OrderedDictionary<String, OrderedSet<InlineStyle>>>([:])
+
+    return Self(
+      generate: { styles in
+        usedStyles.withValue { usedStyles in
+          guard let className = usedStyles.first(where: { $0.value == styles }) else {
+            let className = "c\(usedStyles.count)"
+            usedStyles[className] = styles
+            return [className]
+          }
+          return [className.key]
+        }
+      },
+      stylesheet: {
+        usedStyles.withValue { usedStyles in
+          var sheet = ""
+          for (className, styles) in usedStyles {
+            let mediaStyles = OrderedDictionary(grouping: styles) { $0.media }
+              .sorted(by: { $0.key == nil ? $1.key != nil : false })
+            for (media, styles) in mediaStyles {
+              if let media {
+                sheet.append("@media \(media.rawValue){")
+              }
+              defer {
+                if media != nil {
+                  sheet.append("}")
+                }
+              }
+
+              let stylesWithSelectors = OrderedDictionary(grouping: styles, by: HashedSelector.init)
+                .sorted(by: { $0.key == nil ? $1.key != nil : false })
+
+              for (selector, styles) in stylesWithSelectors {
+                sheet.append("\(selector?.preSelector.rawValue ?? "").\(className)\(selector?.pseudoSelector?.rawValue ?? "")\(selector?.postSelector.rawValue ?? ""){")
+                defer { sheet.append("}") }
+                sheet.append(contentsOf: styles.map { "\($0.property):\($0.value);"}.joined())
+              }
+            }
+          }
+          return sheet
+        }
+      }
+    )
+  }
 
   public static var `class`: StyleSheetGenerator {
     let usedStyles = LockIsolated<OrderedSet<InlineStyle>>([])
@@ -224,7 +275,6 @@ extension StyleSheetGenerator {
       generate: { styles in
         usedStyles.withValue { usedStyles in
           var classes = [String]()
-
           for style in styles {
             let index = usedStyles.firstIndex(of: style) ?? usedStyles.append(style).index
             #if DEBUG
@@ -232,19 +282,17 @@ extension StyleSheetGenerator {
             #else
               let className = "c\(index)"
             #endif
-
             let selector =
-              "\(style.pre.flatMap { $0 + " " } ?? "").\(className)\(style.pseudo?.rawValue ?? "")\(style.post.flatMap { " " + $0 } ?? "")"
-
+              """
+              \(style.preSelector.rawValue).\(className)\(style.pseudoSelector?.rawValue ?? "")\(style.postSelector.rawValue)"
+              """
             rulesets.withValue { rulesets in
               if rulesets[style.media, default: [:]][selector] == nil {
                 rulesets[style.media, default: [:]][selector] = "\(style.property):\(style.value);"
               }
             }
-
             classes.append(className)
           }
-
           return classes
         }
       },
