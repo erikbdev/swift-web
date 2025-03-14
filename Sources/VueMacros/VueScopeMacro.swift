@@ -70,52 +70,59 @@ extension VueScopeMacro: ExpressionMacro {
       rightParen: .rightParenToken()
     )
 
-    let allExpressions = allLabeledArguments.map { identifier in
-      CodeBlockItemSyntax(
-        item: .decl(
-          DeclSyntax(
-            VariableDeclSyntax(
-              bindingSpecifier: .keyword(.let),
-              bindings: [
-                PatternBindingSyntax(
-                  pattern: IdentifierPatternSyntax(
-                    leadingTrivia: .space,
-                    identifier: identifier
-                  ),
-                  initializer: InitializerClauseSyntax(
-                    equal: .equalToken(),
-                    value: FunctionCallExprSyntax(
-                      calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Vue.Expression")),
-                      leftParen: .leftParenToken(),
-                      arguments: [
-                        LabeledExprSyntax(
-                          label: "rawValue",
-                          colon: .colonToken(),
-                          expression: StringLiteralExprSyntax(
-                            openingQuote: .stringQuoteToken(),
-                            segments: [
-                              .stringSegment(
-                                StringSegmentSyntax(
-                                  leadingTrivia: [.spaces(0)],
-                                  content: identifier,
-                                  trailingTrivia: [.spaces(0)]
+    let allExpressions = zip(allLabeledArguments, allArgumentExpressions)
+      .map { identifier, expression in
+        CodeBlockItemSyntax(
+          item: .decl(
+            DeclSyntax(
+              VariableDeclSyntax(
+                bindingSpecifier: .keyword(.let),
+                bindings: [
+                  PatternBindingSyntax(
+                    pattern: IdentifierPatternSyntax(
+                      leadingTrivia: .space,
+                      identifier: identifier
+                    ),
+                    initializer: InitializerClauseSyntax(
+                      equal: .equalToken(),
+                      value: FunctionCallExprSyntax(
+                        calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Vue.Expression")),
+                        leftParen: .leftParenToken(),
+                        arguments: [
+                          LabeledExprSyntax(
+                            label: "name",
+                            colon: .colonToken(),
+                            expression: StringLiteralExprSyntax(
+                              openingQuote: .stringQuoteToken(),
+                              segments: [
+                                .stringSegment(
+                                  StringSegmentSyntax(
+                                    leadingTrivia: [.spaces(0)],
+                                    content: identifier,
+                                    trailingTrivia: [.spaces(0)]
+                                  )
                                 )
-                              )
-                            ],
-                            closingQuote: .stringQuoteToken()
+                              ],
+                              closingQuote: .stringQuoteToken()
+                            ),
+                            trailingComma: .commaToken()
+                          ),
+                          LabeledExprSyntax(
+                            label: "value",
+                            colon: .colonToken(),
+                            expression: expression
                           )
-                        )
-                      ],
-                      rightParen: .rightParenToken()
+                        ],
+                        rightParen: .rightParenToken()
+                      )
                     )
                   )
-                )
-              ]
+                ]
+              )
             )
           )
         )
-      )
-    }
+      }
 
     return ExprSyntax(
       FunctionCallExprSyntax(

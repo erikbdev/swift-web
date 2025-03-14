@@ -30,12 +30,20 @@ public struct Expression<Value: Sendable>: Sendable {
       }
   }
 
+  /// A variable with a value
+  /// This is used in #VueScipe macro
+  public init(name: String, value: Value) where Value: Encodable {
+    self.base = { value }
+    self.rawValue = name
+  }
+
   public init(rawValue: String) where Value == Never {
     self.rawValue = rawValue
     self.base = { fatalError() }
   }
 
   @inlinable @inline(__always)
+  @_disfavoredOverload
   public subscript(dynamicMember name: String) -> AnyExpression {
     AnyExpression(rawValue: "\(self.rawValue).\(name)")
   }
