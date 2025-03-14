@@ -43,6 +43,7 @@ struct ExpressionTests {
 
     let expr1 = test1 * test3
     let expr2 = test2 * 0
+
     #expect(expr1.rawValue == "\"hello\" * []")
     #expect(expr2.rawValue == "0 * 0")
 

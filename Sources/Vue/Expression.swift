@@ -1,32 +1,19 @@
 import Foundation
 import HTML
 
-public struct AnyEncodable: Encodable {
-  let base: any Encodable
-
-  public func encode(to encoder: any Encoder) throws {
-    try base.encode(to: encoder)
-  }
-}
-
-public struct RawExpression: Sendable {}
-
 @dynamicMemberLookup
-public struct Expression<Value> {
-  private let base: Value
+public struct Expression<Value: Sendable>: Sendable {
+  private let base: @Sendable () -> Value
   public let rawValue: String
 
   /// Build a JS object
   public init<each T: Encodable>(_ properties: repeat (String, each T)) where Value == [String: AnyEncodable] {
     var object: [String: AnyEncodable] = [:]
-
     for (key, value) in repeat each properties {
       object[key] = AnyEncodable(base: value)
     }
-
-    self.base = object
-    self.rawValue =
-      if let data = try? JSONEncoder.json.encode(object) {
+    self.base = { [object] in object }
+    self.rawValue = if let data = try? JSONEncoder.json.encode(object) {
         String(decoding: data, as: UTF8.self)
       } else {
         "null"
@@ -35,28 +22,27 @@ public struct Expression<Value> {
 
   /// Accept a encoded value
   public init(_ value: Value) where Value: Encodable {
-    self.base = value
-    self.rawValue =
-      if let data = try? JSONEncoder.json.encode(value) {
+    self.base = { value }
+    self.rawValue = if let data = try? JSONEncoder.json.encode(value) {
         String(decoding: data, as: UTF8.self)
       } else {
         "null"
       }
   }
 
-  public init(rawValue: String) where Value == RawExpression {
-    self.base = RawExpression()
+  public init(rawValue: String) where Value == Never {
     self.rawValue = rawValue
+    self.base = { fatalError() }
   }
 
   @inlinable @inline(__always)
-  public subscript(dynamicMember name: String) -> Expression<RawExpression> {
-    .init(rawValue: "\(self.rawValue).\(name)")
+  public subscript(dynamicMember name: String) -> AnyExpression {
+    AnyExpression(rawValue: "\(self.rawValue).\(name)")
   }
 }
 
 extension Expression where Value: Encodable {
-  public var initialValue: Value { self.base }
+  public var initialValue: Value { self.base() }
 }
 
 extension Expression: ExpressibleByBooleanLiteral where Value == Bool {
@@ -107,13 +93,13 @@ extension Expression: CustomStringConvertible {
 }
 
 // extension Expression: ExpressibleByDictionaryLiteral {
-//   public init(dictionaryLiteral elements: (String, String)...) {
+//   public init(dictionaryLiteral elements: (String, any Encodable)...) {
 //     self.init(Dictionary(elements, uniquingKeysWith: { $1 }))
 //   }
 // }
 
 extension Expression {
-  public func callAsFunction<each T: Encodable>(_ args: repeat each T) -> Expression<RawExpression> {
+  public func callAsFunction<each T: Encodable>(_ args: repeat each T) -> AnyExpression {
     var values: [String] = []
     for value in repeat each args {
       let encoded =
@@ -124,99 +110,92 @@ extension Expression {
         }
       values.append(encoded)
     }
-    return .init(rawValue: self.rawValue + "(\(values.joined(separator: ", ")))")
+    return AnyExpression(rawValue: self.rawValue + "(\(values.joined(separator: ", ")))")
   }
 
-  public func callAsFunction<each T>(_ args: repeat Expression<each T>) -> Expression<RawExpression> {
+  @_disfavoredOverload
+  public func callAsFunction<each T>(_ args: repeat Expression<each T>) -> AnyExpression {
     var values: [String] = []
     for expr in repeat each args {
       values.append(expr.rawValue)
     }
-    return .init(rawValue: self.rawValue + "(\(values.joined(separator: ", ")))")
+    return AnyExpression(rawValue: self.rawValue + "(\(values.joined(separator: ", ")))")
   }
 
   @inlinable @inline(__always)
-  public func assign<T>(_ expression: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(self.rawValue) = \(expression)")
+  public func assign<T>(_ expression: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(self.rawValue) = \(expression)")
   }
 
   @inlinable @inline(__always)
-  public static func * <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) * \(rhs.rawValue)")
+  public static func * <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) * \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func *= <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) *= \(rhs.rawValue)")
+  public static func *= <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) *= \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func / <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) / \(rhs.rawValue)")
+  public static func / <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) / \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func /= <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) /= \(rhs.rawValue)")
+  public static func /= <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) /= \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func + <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) + \(rhs.rawValue)")
+  public static func + <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) + \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func += <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) += \(rhs.rawValue)")
+  public static func += <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) += \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func - <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) - \(rhs.rawValue)")
+  public static func - <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) - \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func -= <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) -= \(rhs.rawValue)")
+  public static func -= <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) -= \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func == <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) == \(rhs.rawValue)")
+  public static func == <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) == \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func != <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) != \(rhs.rawValue)")
+  public static func != <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) != \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static func === <T>(lhs: Self, rhs: Expression<T>) -> Expression<RawExpression> {
-    .init(rawValue: "\(lhs.rawValue) === \(rhs.rawValue)")
+  public static func === <T>(lhs: Self, rhs: Expression<T>) -> AnyExpression {
+    AnyExpression(rawValue: "\(lhs.rawValue) === \(rhs.rawValue)")
   }
 
   @inlinable @inline(__always)
-  public static prefix func ! (lhs: Self) -> Expression<RawExpression> {
-    .init(rawValue: "!\(lhs.rawValue)")
+  public static prefix func ! (lhs: Self) -> AnyExpression {
+    AnyExpression(rawValue: "!\(lhs.rawValue)")
   }
 }
 
-extension Expression: Sendable where Value: Sendable {}
+public typealias AnyExpression = Expression<Never>
 
-extension JSONEncoder {
-  fileprivate static let json = {
-    let encoder = JSONEncoder()
-    encoder.keyEncodingStrategy = .useDefaultKeys
-    encoder.dataEncodingStrategy = .deferredToData
-    encoder.dateEncodingStrategy = .iso8601
-    encoder.nonConformingFloatEncodingStrategy = .convertToString(
-      positiveInfinity: "0",
-      negativeInfinity: "0",
-      nan: "0"
-    )
-    encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-    return encoder
-  }()
+public struct AnyEncodable: Encodable, @unchecked Sendable {
+  let base: any Encodable
+
+  public func encode(to encoder: any Encoder) throws {
+    try base.encode(to: encoder)
+  }
 }
 
 extension HTMLBuilder {
@@ -233,4 +212,20 @@ extension HTMLString.StringInterpolation {
   public mutating func appendInterpolation<T>(_ expression: Expression<T>) {
     appendInterpolation(raw: "{{ \(expression.rawValue) }}")
   }
+}
+
+extension JSONEncoder {
+  fileprivate static let json = {
+    let encoder = JSONEncoder()
+    encoder.keyEncodingStrategy = .useDefaultKeys
+    encoder.dataEncodingStrategy = .deferredToData
+    encoder.dateEncodingStrategy = .iso8601
+    encoder.nonConformingFloatEncodingStrategy = .convertToString(
+      positiveInfinity: "0",
+      negativeInfinity: "0",
+      nan: "0"
+    )
+    encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+    return encoder
+  }()
 }
