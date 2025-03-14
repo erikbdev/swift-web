@@ -1,7 +1,8 @@
+import MacroTesting
 import Testing
 import Vue
+
 @testable import VueMacros
-import MacroTesting
 
 @Suite("VueScope macro testing")
 struct VueScopeTests {
@@ -12,23 +13,17 @@ struct VueScopeTests {
     case cpp
   }
 
-  private struct RefComponent: HTML {
-    let codeLang: Expression
-
-    var body: some HTML {
+  @Test func vueScopeTest() async throws {
+    let scope = #VueScope(CodeLang.swift) { codeLang in
       button(.v.on(.click, codeLang.assign("HAHAHA"))) {
         "Change Me"
       }
     }
-  }
 
-  @Test func vueScopeTest() async throws {
-    let scope = #VueScope(CodeLang.swift) { (codeLang: Expression) in }
-
-    #expect(scope.render() == 
-      """
-      <div v-scope="{ codeLang: "swift" }"></div>
-      """
+    #expect(
+      scope.render() == """
+        <div v-scope="{&quot;codeLang&quot;:&quot;swift&quot;}"><button v-on:click="codeLang = &quot;HAHAHA&quot;">Change Me</button></div>
+        """
     )
   }
 }

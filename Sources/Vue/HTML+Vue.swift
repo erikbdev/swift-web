@@ -84,22 +84,22 @@ extension HTMLAttribute.Vue {
   }
 
   /// Update the element's text content.
-  public func text(_ script: Expression) -> HTMLAttribute {
+  public func text<T>(_ script: Expression<T>) -> HTMLAttribute {
     directive(name: "text", script.rawValue)
   }
 
   /// Update the element's innerHTML.
-  public func html(_ script: Expression) -> HTMLAttribute {
+  public func html<T>(_ script: Expression<T>) -> HTMLAttribute {
     directive(name: "html", script.rawValue)
   }
 
   /// Toggle the element's visibility based on the truthy-ness of the expression value.
-  public func show(_ script: Expression) -> HTMLAttribute {
+  public func show<T>(_ script: Expression<T>) -> HTMLAttribute {
     directive(name: "show", script.rawValue)
   }
 
   /// Conditionally render an element or a template fragment based on the truthy-ness of the expression value.
-  public func `if`(_ script: Expression) -> HTMLAttribute {
+  public func `if`<T>(_ script: Expression<T>) -> HTMLAttribute {
     directive(name: "if", script.rawValue)
   }
 
@@ -109,20 +109,20 @@ extension HTMLAttribute.Vue {
   }
 
   /// Denote the "else if block" for ``v-if``. Can be chained.
-  public func elseIf(_ script: Expression) -> HTMLAttribute {
+  public func elseIf<T>(_ script: Expression<T>) -> HTMLAttribute {
     directive(name: "else-if", script.rawValue)
   }
 
   /// Render the element or template block multiple times based on the source data.
-  public func `for`(_ script: Expression) -> HTMLAttribute {
+  public func `for`<T>(_ script: Expression<T>) -> HTMLAttribute {
     directive(name: "else-if", script.rawValue)
   }
 
   /// Attach an event listener to the element.
-  public func on<Event: HTMLEventValue>(
+  public func on<Event: HTMLEventValue, T>(
     _ event: Event,
     modifiers: OnEventModifier? = nil,
-    _ script: Expression
+    _ script: Expression<T>
   ) -> HTMLAttribute {
     directive(
       name: "on",
@@ -133,9 +133,9 @@ extension HTMLAttribute.Vue {
   }
 
   /// Dynamically bind one or more attributes, or a component prop to an expression.
-  public func bind(
+  public func bind<T>(
     attrOrProp: String,
-    _ script: Expression
+    _ script: Expression<T>
   ) -> HTMLAttribute {
     directive(
       name: "bind",
@@ -144,14 +144,14 @@ extension HTMLAttribute.Vue {
     )
   }
 
-  public func bind(_ script: Expression) -> HTMLAttribute {
+  public func bind<T>(_ script: Expression<T>) -> HTMLAttribute {
     directive(name: "bind", script.rawValue)
   }
 
   /// Create a two-way binding on a form input element or a component.
-  public func model(
+  public func model<T>(
     modifiers: ModelModifier? = nil,
-    _ script: Expression
+    _ script: Expression<T>
   ) -> HTMLAttribute {
     directive(
       name: "model",
@@ -161,9 +161,9 @@ extension HTMLAttribute.Vue {
   }
 
   /// Denote named slots or scoped slots that expect to receive props.
-  public func slot(
+  public func slot<T>(
     name: String? = nil,
-    _ script: Expression? = ""
+    _ script: Expression<T>? = ""
   ) -> HTMLAttribute {
     directive(
       name: "slot",
@@ -188,7 +188,7 @@ extension HTMLAttribute.Vue {
   }
 
   /// Used as a replacement for `#app`, works the same way as `v-scope` in `petite-vue`
-  public func scope(_ expression: Expression) -> HTMLAttribute {
+  public func scope<T>(_ expression: Expression<T>) -> HTMLAttribute {
     directive(
       name: "scope",
       expression.rawValue

@@ -12,12 +12,8 @@ extension VueScopeMacro: ExpressionMacro {
       throw MacroExpansionErrorMessage("`#VueScope` requires a closure")
     }
 
-    guard let originalClosureSignature = originalClosure.signature else {
-      throw MacroExpansionErrorMessage("`#VueScope` requires labels in parameter signature")
-    }
-
     let allLabeledArguments: [TokenSyntax] =
-      originalClosureSignature.parameterClause.flatMap { clause in
+      originalClosure.signature?.parameterClause.flatMap { clause in
         switch clause {
         case .simpleInput(let closure):
           closure.map(\.name.trimmed)
@@ -35,37 +31,39 @@ extension VueScopeMacro: ExpressionMacro {
       throw MacroExpansionErrorMessage("`#VueScope` requires arguments")
     }
 
-    let allReactives = zip(allLabeledArguments, allArgumentExpressions)
-      .map { identifier, expression in
-        TupleExprSyntax(
-          leftParen: .leftParenToken(),
-          elements: [
-            LabeledExprSyntax(
-              expression: StringLiteralExprSyntax(
-                openingQuote: .stringQuoteToken(),
-                segments: [.stringSegment(StringSegmentSyntax(content: identifier))],
-                closingQuote: .stringQuoteToken()
-              ),
-              trailingComma: .commaToken()
-            ),
-            LabeledExprSyntax(
-              expression: expression
-            ),
-          ],
-          rightParen: .rightParenToken()
-        )
-      }
-
     let expressionObject = FunctionCallExprSyntax(
       calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Vue.Expression")),
       leftParen: .leftParenToken(),
       arguments: LabeledExprListSyntax(
-        allReactives.indices
-          .map { idx in
+        zip(allLabeledArguments, allArgumentExpressions)
+          .enumerated()
+          .map { idx, object in
             LabeledExprSyntax(
               label: nil,
-              expression: allReactives[idx],
-              trailingComma: allReactives.index(after: idx) >= allReactives.endIndex ? nil : .commaToken()
+              expression: TupleExprSyntax(
+                leftParen: .leftParenToken(),
+                elements: [
+                  LabeledExprSyntax(
+                    expression: StringLiteralExprSyntax(
+                      openingQuote: .stringQuoteToken(),
+                      segments: [
+                        .stringSegment(
+                          StringSegmentSyntax(
+                            leadingTrivia: [.spaces(0)],
+                            content: object.0,
+                            trailingTrivia: [.spaces(0)]
+                          )
+                        )
+                      ],
+                      closingQuote: .stringQuoteToken()
+                    ),
+                    trailingComma: .commaToken()
+                  ),
+                  LabeledExprSyntax(expression: object.1),
+                ],
+                rightParen: .rightParenToken()
+              ),
+              trailingComma: allLabeledArguments.index(after: idx) >= allLabeledArguments.endIndex ? nil : .commaToken()
             )
           }
       ),
@@ -73,51 +71,84 @@ extension VueScopeMacro: ExpressionMacro {
     )
 
     let allExpressions = allLabeledArguments.map { identifier in
-      VariableDeclSyntax(
-        bindingSpecifier: .keyword(.let),
-        bindings: [
-          PatternBindingSyntax(
-            pattern: IdentifierPatternSyntax(
-              leadingTrivia: .space,
-              identifier: identifier
-            ),
-            initializer: InitializerClauseSyntax(
-              equal: .equalToken(),
-              value: FunctionCallExprSyntax(
-                calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Vue.Expression")),
-                leftParen: .leftParenToken(),
-                arguments: [
-                  LabeledExprSyntax(
-                    label: "rawValue",
-                    colon: .colonToken(),
-                    expression: StringLiteralExprSyntax(
-                      openingQuote: .stringQuoteToken(),
-                      segments: [.stringSegment(StringSegmentSyntax(content: identifier))],
-                      closingQuote: .stringQuoteToken()
+      CodeBlockItemSyntax(
+        item: .decl(
+          DeclSyntax(
+            VariableDeclSyntax(
+              bindingSpecifier: .keyword(.let),
+              bindings: [
+                PatternBindingSyntax(
+                  pattern: IdentifierPatternSyntax(
+                    leadingTrivia: .space,
+                    identifier: identifier
+                  ),
+                  initializer: InitializerClauseSyntax(
+                    equal: .equalToken(),
+                    value: FunctionCallExprSyntax(
+                      calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Vue.Expression")),
+                      leftParen: .leftParenToken(),
+                      arguments: [
+                        LabeledExprSyntax(
+                          label: "rawValue",
+                          colon: .colonToken(),
+                          expression: StringLiteralExprSyntax(
+                            openingQuote: .stringQuoteToken(),
+                            segments: [
+                              .stringSegment(
+                                StringSegmentSyntax(
+                                  leadingTrivia: [.spaces(0)],
+                                  content: identifier,
+                                  trailingTrivia: [.spaces(0)]
+                                )
+                              )
+                            ],
+                            closingQuote: .stringQuoteToken()
+                          )
+                        )
+                      ],
+                      rightParen: .rightParenToken()
                     )
                   )
-                ],
-                rightParen: .rightParenToken()
-              )
+                )
+              ]
             )
           )
-        ]
+        )
       )
     }
 
-    let allExpressionsCodeBlock = CodeBlockItemListSyntax(
-      allExpressions.map {
-        CodeBlockItemSyntax(
-          item: .decl(DeclSyntax($0))
+    return ExprSyntax(
+      FunctionCallExprSyntax(
+        calledExpression: DeclReferenceExprSyntax(
+          baseName: .identifier("div")
+        ),
+        leftParen: .leftParenToken(),
+        arguments: [
+          LabeledExprSyntax(
+            label: nil,
+            expression: FunctionCallExprSyntax(
+              calledExpression: MemberAccessExprSyntax(
+                base: MemberAccessExprSyntax(
+                  base: ExprSyntax?.none,
+                  period: .periodToken(),
+                  declName: DeclReferenceExprSyntax(baseName: .identifier("v"))
+                ),
+                period: .periodToken(),
+                declName: DeclReferenceExprSyntax(baseName: .identifier("scope"))
+              ),
+              leftParen: .leftParenToken(),
+              arguments: [
+                LabeledExprSyntax(label: nil, expression: expressionObject)
+              ],
+              rightParen: .rightParenToken()
+            )
+          )
+        ],
+        rightParen: .rightParenToken(),
+        trailingClosure: ClosureExprSyntax(
+          statements: allExpressions + originalClosure.statements
         )
-      }
+      )
     )
-
-    return """
-      div(.v.scope(\(expressionObject))) {
-        \(allExpressionsCodeBlock)
-        \(originalClosure.statements)
-      }
-      """
   }
 }
