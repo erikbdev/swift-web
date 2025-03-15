@@ -30,8 +30,8 @@ public struct URLRoutingMiddleware<
       do {
         return try await next(request, context)
       } catch {
-        context.logger.info("\(routingError)")
         #if DEBUG
+          context.logger.debug("Routing \(routingError)")
           throw HTTPError(.notFound, message: "Routing \(routingError)")
         #else
           throw error
