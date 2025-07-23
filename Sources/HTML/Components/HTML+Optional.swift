@@ -4,9 +4,8 @@ extension Optional: HTML where Wrapped: HTML {
     _ html: consuming Self,
     into output: inout Output
   ) {
-    switch html {
-    case let .some(html): Wrapped._render(html, into: &output)
-    case .none: break
+    if case .some(let html) = html {
+      Wrapped._render(html, into: &output)
     }
   }
 

@@ -1,26 +1,6 @@
 import Dependencies
 import OrderedCollections
 
-extension HTML {
-  public func attribute(
-    _ name: String,
-    value: String? = "",
-    mergeMode: HTMLAttribute.MergeMode = .replaceValue
-  ) -> HTMLAttributes<Self> {
-    HTMLAttributes(
-      content: self,
-      attributes: [HTMLAttribute(name: name, value: value, mergeMode: mergeMode)]
-    )
-  }
-
-  public func attribute(_ attribute: HTMLAttribute) -> HTMLAttributes<Self> {
-    HTMLAttributes(
-      content: self,
-      attributes: [attribute]
-    )
-  }
-}
-
 public struct HTMLAttributes<Content: HTML>: HTML {
   @usableFromInline
   let content: Content
@@ -60,8 +40,8 @@ public struct HTMLAttributes<Content: HTML>: HTML {
   ) {
     withDependencies {
       for attr in html.attributes {
-        $0.allAttributes[attr.name] =
-          switch ($0.allAttributes[attr.name], attr.value, attr.mergeMode) {
+        $0.htmlContext.attributes[attr.name] =
+          switch ($0.htmlContext.attributes[attr.name], attr.value, attr.mergeMode) {
           case (.none, let newValue, .ignoreIfSet):
             newValue
           case (_, let newValue, .replaceValue):
@@ -83,14 +63,22 @@ public struct HTMLAttributes<Content: HTML>: HTML {
 
 extension HTMLAttributes: Sendable where Content: Sendable {}
 
-extension DependencyValues {
-  private enum HTMLAttributeKey: DependencyKey {
-    static var liveValue: OrderedDictionary<String, String> { [:] }
-    static var testValue: OrderedDictionary<String, String> { [:] }
+extension HTML {
+  public func attribute(
+    _ name: String,
+    value: String? = "",
+    mergeMode: HTMLAttribute.MergeMode = .replaceValue
+  ) -> HTMLAttributes<Self> {
+    HTMLAttributes(
+      content: self,
+      attributes: [HTMLAttribute(name: name, value: value, mergeMode: mergeMode)]
+    )
   }
 
-  public var allAttributes: OrderedDictionary<String, String> {
-    get { self[HTMLAttributeKey.self] }
-    set { self[HTMLAttributeKey.self] = newValue }
+  public func attribute(_ attribute: HTMLAttribute) -> HTMLAttributes<Self> {
+    HTMLAttributes(
+      content: self,
+      attributes: [attribute]
+    )
   }
 }

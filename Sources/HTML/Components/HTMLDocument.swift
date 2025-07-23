@@ -11,12 +11,12 @@ extension HTMLDocument {
     _ document: consuming Self,
     into output: inout Output
   ) {
-    @Dependency(\.ssg) var ssg
+    @Dependency(\.htmlContext) var context
 
     let documentBody: _HTMLConditional<_HTMLBytes, Body>
     let stylesheet: String
 
-    if let ssg {
+    if let ssg = context.styles {
       var bodyBytes = _HTMLBytes()
       Body._render(document.body, into: &bodyBytes)
       stylesheet = ssg.stylesheet()

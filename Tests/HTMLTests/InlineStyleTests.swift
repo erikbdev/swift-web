@@ -5,16 +5,16 @@ import Dependencies
 @Suite("Inline Style Tests")
 struct InlineStyleTests {
   @Test func styleClasses() async throws {
-    @Dependency(\.ssg) var ssg
+    @Dependency(\.htmlContext) var context
     let (html, stylesheet) = withDependencies {
-      $0.ssg = .class
+      $0.htmlContext.styles = .class
     } operation: {
       (
         p {}
           .inlineStyle("color", "red")
           .inlineStyle("background", "white")
           .render(),
-        ssg?.stylesheet()
+        context.stylesheet
       )
     }
 
@@ -23,9 +23,9 @@ struct InlineStyleTests {
   }
 
   @Test func nestedStyleClasses() async throws {
-    @Dependency(\.ssg) var ssg
+    @Dependency(\.htmlContext) var context
     let (html, stylesheet) = withDependencies {
-      $0.ssg = .class
+      $0.htmlContext.styles = .class
     } operation: {
      (
         p {
@@ -35,7 +35,7 @@ struct InlineStyleTests {
         .inlineStyle("color", "red")
         .inlineStyle("background", "white")
         .render(),
-        ssg?.stylesheet()
+        context.stylesheet
       )
     }
 
@@ -44,9 +44,9 @@ struct InlineStyleTests {
   }
 
   @Test func sameStyleClasses() async throws {
-    @Dependency(\.ssg) var ssg
+    @Dependency(\.htmlContext) var context
     let (html, stylesheet) = withDependencies {
-      $0.ssg = .class
+      $0.htmlContext.styles = .class
     } operation: {
       (
         p {
@@ -56,7 +56,7 @@ struct InlineStyleTests {
         .inlineStyle("color", "red")
         .inlineStyle("background", "white")
         .render(),
-        ssg?.stylesheet()
+        context.stylesheet
       )
     }
 
@@ -65,27 +65,26 @@ struct InlineStyleTests {
   }
 
   @Test func inlineStyle() async throws {
-    @Dependency(\.ssg) var ssg
-
+    @Dependency(\.htmlContext) var context
     let (html, stylesheet) = withDependencies {
-      $0.ssg = nil
+      $0.htmlContext.styles = nil
     } operation: {
       (
         p {}
           .inlineStyle("color", "red")
           .render(),
-        ssg?.stylesheet()
+        context.stylesheet
       )
     }
 
     #expect(html == #"<p style="color: red;"></p>"#)
-    #expect(stylesheet == nil)
+    #expect(stylesheet == "")
   }
 
   @Test func sameStyleGroupedClasses() async throws {
-    @Dependency(\.ssg) var ssg
+    @Dependency(\.htmlContext) var context
     let (html, stylesheet) = withDependencies {
-      $0.ssg = .groupedStyles
+      $0.htmlContext.styles = .groupedStyles
     } operation: {
       (
         p {
@@ -96,7 +95,7 @@ struct InlineStyleTests {
         .inlineStyle("color", "red")
         .inlineStyle("background", "white")
         .render(),
-        ssg?.stylesheet()
+        context.stylesheet
       )
     }
 
@@ -105,9 +104,9 @@ struct InlineStyleTests {
   }
 
   @Test func diffStyleGroupedClasses() async throws {
-    @Dependency(\.ssg) var ssg
+    @Dependency(\.htmlContext) var context
     let (html, stylesheet) = withDependencies {
-      $0.ssg = .groupedStyles
+      $0.htmlContext.styles = .groupedStyles
     } operation: {
       (
         p {
@@ -118,7 +117,7 @@ struct InlineStyleTests {
         .inlineStyle("color", "red")
         .inlineStyle("background", "white")
         .render(),
-        ssg?.stylesheet()
+        context.stylesheet
       )
     }
 
@@ -127,9 +126,9 @@ struct InlineStyleTests {
   }
 
   @Test func mediaGroupedClass() async throws {
-    @Dependency(\.ssg) var ssg
+    @Dependency(\.htmlContext) var context
     let (html, stylesheet) = withDependencies {
-      $0.ssg = .groupedStyles
+      $0.htmlContext.styles = .groupedStyles
     } operation: {
       (
         p {}
@@ -138,7 +137,7 @@ struct InlineStyleTests {
         .inlineStyle("font-size", "1em", post: "[value]")
         .inlineStyle("background", "green", media: .all)
         .render(),
-        ssg?.stylesheet()
+        context.stylesheet
       )
     }
 
