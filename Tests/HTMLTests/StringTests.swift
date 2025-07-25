@@ -3,7 +3,7 @@ import HTML
 
 @Suite("HTML string tests")
 struct StringTests {
-  @Test func testName() async throws {
+  @Test func testName() {
       var interpolation = HTMLString.StringInterpolation(literalCapacity: 1, interpolationCount: 4)
       interpolation.appendLiteral("&Hello<, ")
       interpolation.appendInterpolation("Erik&")
@@ -23,8 +23,8 @@ struct StringTests {
       #expect(HTMLText("<p></p>") == "&lt;p>&lt;/p>")
   }
 
-  @Test func testHTMLStringBuilder() async throws {
-    func build(@StringBuilder build: () -> String) -> String {
+  @Test func testHTMLStringBuilder() {
+    func build(@HTMLString build: () -> String) -> String {
       build()
     }
 

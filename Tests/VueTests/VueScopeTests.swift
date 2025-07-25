@@ -13,7 +13,7 @@ struct VueScopeTests {
     case cpp
   }
 
-  @Test func vueScopeTest() async throws {
+  @Test func vueScopeTest() {
     let scope = #VueScope(CodeLang.swift) { codeLang in
       button(.v.on(.click, codeLang.assign("HAHAHA"))) {
         "Change Me"

@@ -10,7 +10,7 @@ private struct Nested: Encodable {
 
 @Suite("Expression tests")
 struct ExpressionTests {
-  @Test func createKeyValueExpression() async throws {
+  @Test func createKeyValueExpression() {
     let test1 = Expression("hello")
     let test2 = Expression(0)
     let test3 = Expression([Int]())

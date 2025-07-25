@@ -1,7 +1,7 @@
 import Markdown
 
 public struct HTMLMarkdown: HTML, Sendable, ExpressibleByStringLiteral {
-  public let body: _SendableAnyHTML
+  public let body: AnyHTMLSendable
 
   public init(_ markdown: String) {
     var converter = HTMLMarkdownConverter()
@@ -20,7 +20,7 @@ public struct HTMLMarkdown: HTML, Sendable, ExpressibleByStringLiteral {
 }
 
 private struct HTMLMarkdownConverter: MarkupVisitor {
-  typealias Result = _SendableAnyHTML
+  typealias Result = AnyHTMLSendable
 
   @HTMLBuilder
   mutating func defaultVisit(
@@ -300,12 +300,12 @@ private struct HTMLMarkdownConverter: MarkupVisitor {
 
 extension HTMLBuilder {
   @_disfavoredOverload
-  fileprivate static func buildExpression(_ expression: some HTML & Sendable) -> _SendableAnyHTML {
-    _SendableAnyHTML(expression)
+  fileprivate static func buildExpression(_ expression: some HTML & Sendable) -> AnyHTMLSendable {
+    AnyHTMLSendable(expression)
   }
 
   @_disfavoredOverload
-  fileprivate static func buildFinalResult(_ component: some HTML & Sendable) -> _SendableAnyHTML {
-    _SendableAnyHTML(component)
+  fileprivate static func buildFinalResult(_ component: some HTML & Sendable) -> AnyHTMLSendable {
+    AnyHTMLSendable(component)
   }
 }

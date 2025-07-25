@@ -1,12 +1,55 @@
 import Dependencies
 
-public protocol HTMLDocument: HTML {
-  associatedtype Head: HTML
+public protocol HTMLDocument: AsyncHTML where Body: AsyncHTML {
+  associatedtype Head: AsyncHTML
 
   @HTMLBuilder var head: Head { get }
 }
 
 extension HTMLDocument {
+  @_spi(Render)
+  public static func _render<Output: HTMLByteStream>(
+    _ document: consuming Self,
+    into output: inout Output
+  ) async throws {
+    @Dependency(\.htmlContext) var context
+
+    let documentBody: _HTMLConditional<_HTMLBytes, Body>
+    let stylesheet: String
+
+    if let ssg = context.styles {
+      var bodyBytes = _HTMLBytes()
+      try await Body._render(document.body, into: &bodyBytes)
+      stylesheet = ssg.stylesheet()
+      documentBody = .trueContent(bodyBytes)
+    } else {
+      stylesheet = ""
+      documentBody = .falseContent(document.body)
+    }
+
+    try await HTMLGroup {
+      HTMLDoctype()
+      tag("html") {
+        tag("head") {
+          document.head
+
+          if !stylesheet.isEmpty {
+            style {
+              HTMLRaw(stylesheet)
+            }
+          }
+        }
+        tag("body") {
+          documentBody
+        }
+      }
+    }
+    .render(into: &output)
+  }
+}
+
+extension HTMLDocument where Head: HTML, Body: HTML {
+  @_spi(Render)
   public static func _render<Output: HTMLByteStream>(
     _ document: consuming Self,
     into output: inout Output
@@ -26,7 +69,7 @@ extension HTMLDocument {
       documentBody = .falseContent(document.body)
     }
 
-    HTMLBuilder.render(into: &output) {
+    HTMLGroup {
       HTMLDoctype()
       html {
         tag("head") {
@@ -44,6 +87,7 @@ extension HTMLDocument {
         }
       }
     }
+    .render(into: &output)
   }
 }
 
@@ -54,7 +98,7 @@ private struct _HTMLBytes: HTML, Sendable, HTMLByteStream {
     self.bytes.append(byte)
   }
 
-  mutating func write(_ bytes: consuming some Collection<UInt8>) {
+  mutating func write(_ bytes: consuming some Sequence<UInt8>) {
     self.bytes.append(contentsOf: bytes)
   }
 
@@ -62,19 +106,16 @@ private struct _HTMLBytes: HTML, Sendable, HTMLByteStream {
     _ html: consuming _HTMLBytes,
     into output: inout Output
   ) {
-    html.bytes.withUnsafeBufferPointer {
-      output.write($0)
-    }
+    output.write(html.bytes)
+  }
+
+  @_spi(Render)
+  public static func _render<Output: HTMLByteStream>(
+    _ html: consuming Self,
+    into output: inout Output
+  ) async throws {
+    output.write(html.bytes)
   }
 
   var body: Never { fatalError() }
-}
-
-extension HTMLBuilder {
-  fileprivate static func render<Output: HTMLByteStream, Content: HTML>(
-    into output: inout Output,
-    @HTMLBuilder content: () -> Content
-  ) {
-    Content._render(content(), into: &output)
-  }
 }

@@ -1,4 +1,4 @@
-public struct HTMLGroup<Content: HTML>: HTML {
+public struct HTMLGroup<Content: AsyncHTML>: AsyncHTML {
   @usableFromInline
   let content: Content
 
@@ -8,5 +8,7 @@ public struct HTMLGroup<Content: HTML>: HTML {
   }
 
   @inlinable @inline(__always)
-  public var body: some HTML { content }
+  public var body: Content { content }
 }
+
+extension HTMLGroup: HTML where Content: HTML {}

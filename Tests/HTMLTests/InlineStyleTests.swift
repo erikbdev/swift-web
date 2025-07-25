@@ -1,15 +1,15 @@
-import Testing
-import HTML
 import Dependencies
+import HTML
+import Testing
 
 @Suite("Inline Style Tests")
 struct InlineStyleTests {
-  @Test func styleClasses() async throws {
-    @Dependency(\.htmlContext) var context
+  @Test func styleClasses() {
     let (html, stylesheet) = withDependencies {
       $0.htmlContext.styles = .class
     } operation: {
-      (
+      @Dependency(\.htmlContext) var context
+      return (
         p {}
           .inlineStyle("color", "red")
           .inlineStyle("background", "white")
@@ -22,12 +22,12 @@ struct InlineStyleTests {
     #expect(stylesheet == #".color-0{color:red;}.background-1{background:white;}"#)
   }
 
-  @Test func nestedStyleClasses() async throws {
-    @Dependency(\.htmlContext) var context
+  @Test func nestedStyleClasses() {
     let (html, stylesheet) = withDependencies {
       $0.htmlContext.styles = .class
     } operation: {
-     (
+      @Dependency(\.htmlContext) var context
+      return (
         p {
           span()
             .inlineStyle("color", "green")
@@ -43,12 +43,12 @@ struct InlineStyleTests {
     #expect(stylesheet == #".color-0{color:red;}.background-1{background:white;}.color-2{color:green;}"#)
   }
 
-  @Test func sameStyleClasses() async throws {
-    @Dependency(\.htmlContext) var context
+  @Test func sameStyleClasses() {
     let (html, stylesheet) = withDependencies {
       $0.htmlContext.styles = .class
     } operation: {
-      (
+      @Dependency(\.htmlContext) var context
+      return (
         p {
           span()
             .inlineStyle("color", "red")
@@ -64,12 +64,12 @@ struct InlineStyleTests {
     #expect(stylesheet == #".color-0{color:red;}.background-1{background:white;}"#)
   }
 
-  @Test func inlineStyle() async throws {
-    @Dependency(\.htmlContext) var context
+  @Test func inlineStyle() {
     let (html, stylesheet) = withDependencies {
       $0.htmlContext.styles = nil
     } operation: {
-      (
+      @Dependency(\.htmlContext) var context
+      return (
         p {}
           .inlineStyle("color", "red")
           .render(),
@@ -81,12 +81,12 @@ struct InlineStyleTests {
     #expect(stylesheet == "")
   }
 
-  @Test func sameStyleGroupedClasses() async throws {
-    @Dependency(\.htmlContext) var context
+  @Test func sameStyleGroupedClasses() {
     let (html, stylesheet) = withDependencies {
       $0.htmlContext.styles = .groupedStyles
     } operation: {
-      (
+      @Dependency(\.htmlContext) var context
+      return (
         p {
           span()
             .inlineStyle("color", "red")
@@ -103,12 +103,12 @@ struct InlineStyleTests {
     #expect(stylesheet == #".c0{color:red;background:white;}"#)
   }
 
-  @Test func diffStyleGroupedClasses() async throws {
-    @Dependency(\.htmlContext) var context
+  @Test func diffStyleGroupedClasses() {
     let (html, stylesheet) = withDependencies {
       $0.htmlContext.styles = .groupedStyles
     } operation: {
-      (
+      @Dependency(\.htmlContext) var context
+      return (
         p {
           span()
             .inlineStyle("color", "green")
@@ -125,18 +125,18 @@ struct InlineStyleTests {
     #expect(stylesheet == #".c0{color:red;background:white;}.c1{color:green;background:white;}"#)
   }
 
-  @Test func mediaGroupedClass() async throws {
-    @Dependency(\.htmlContext) var context
+  @Test func mediaGroupedClass() {
     let (html, stylesheet) = withDependencies {
       $0.htmlContext.styles = .groupedStyles
     } operation: {
-      (
+      @Dependency(\.htmlContext) var context
+      return (
         p {}
-        .inlineStyle("color", "red")
-        .inlineStyle("background", "white")
-        .inlineStyle("font-size", "1em", post: "[value]")
-        .inlineStyle("background", "green", media: .all)
-        .render(),
+          .inlineStyle("color", "red")
+          .inlineStyle("background", "white")
+          .inlineStyle("font-size", "1em", post: "[value]")
+          .inlineStyle("background", "green", media: .all)
+          .render(),
         context.stylesheet
       )
     }

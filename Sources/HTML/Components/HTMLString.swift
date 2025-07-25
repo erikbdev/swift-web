@@ -6,6 +6,7 @@ public let HTMLRaw = HTMLString.init(raw:)
 /// This is a typealias of ``HTMLString(_:)``
 public let HTMLText = HTMLString.init(_:)
 
+@resultBuilder
 public struct HTMLString: HTML, Sendable, ExpressibleByStringLiteral, ExpressibleByStringInterpolation {
   private var _storage: [StorageValue]
 
@@ -44,39 +45,42 @@ public struct HTMLString: HTML, Sendable, ExpressibleByStringLiteral, Expressibl
         for byte in bytes {
           switch byte {
           case 0x26 where value.escape:  // &
-            "&amp;".utf8.withContiguousStorageIfAvailable {
-              output.write($0)
-            }
+            output.write("&amp;".utf8)
           case 0x3C where value.escape:  // <
-            "&lt;".utf8.withContiguousStorageIfAvailable {
-              output.write($0)
-            }
+            output.write("&lt;".utf8)
           default:
             output.write(byte)
           }
         }
       case .html(let html):
         withUnsafeMutablePointer(to: &output) { output in
-          var proxy = _HTMLOutputStreamProxy { bytes in
+          var proxy = _HTMLByteStreamProxy { bytes in
             for byte in bytes {
               switch byte {
               case 0x26 where value.escape:  // &
-                "&amp;".utf8.withContiguousStorageIfAvailable {
-                  output.pointee.write($0)
-                }
+                output.pointee.write("&amp;".utf8)
               case 0x3C where value.escape:  // <
-                "&lt;".utf8.withContiguousStorageIfAvailable { 
-                  output.pointee.write($0)
-                }
+                output.pointee.write("&lt;".utf8)
               default:
                 output.pointee.write(byte)
               }
             }
           }
-          _SendableAnyHTML._render(html, into: &proxy)
+          AnyHTMLSendable._render(html, into: &proxy)
         }
       }
     }
+  }
+
+  @_spi(Render)
+  public static func _render<Output: HTMLByteStream>(
+    _ html: consuming Self,
+    into output: inout Output
+  ) async throws {
+    func _render(_ html: consuming Self) {
+      Self._render(html, into: &output)
+    }
+    _render(html)
   }
 
   public var body: Never { fatalError() }
@@ -112,8 +116,39 @@ extension HTMLString {
   }
 }
 
-@resultBuilder
-public enum StringBuilder {
+private struct StorageValue: Sendable {
+  let element: Element
+  let escape: Bool
+
+  init<S: Sequence<UInt8>>(_ bytes: S, escape: Bool) {
+    self.element = .bytes(ContiguousArray(bytes))
+    self.escape = escape
+  }
+
+  init<T: HTML & Sendable>(_ html: T, escape: Bool) {
+    self.element = .html(AnyHTMLSendable(html))
+    self.escape = escape
+  }
+
+  enum Element: Sendable {
+    case bytes(ContiguousArray<UInt8>)
+    case html(AnyHTMLSendable)
+  }
+}
+
+private struct _HTMLByteStreamProxy: HTMLByteStream {
+  let callback: (ContiguousArray<UInt8>) -> Void
+
+  mutating func write(_ byte: consuming UInt8) {        
+  }
+
+  mutating func write(_ bytes: consuming some Sequence<UInt8>) {
+    callback(ContiguousArray(bytes))
+  }
+}
+
+// Result builder
+extension HTMLString {
   @inlinable @inline(__always)
   public static func buildPartialBlock(first: String) -> String {
     first
@@ -142,37 +177,5 @@ public enum StringBuilder {
   @inlinable @inline(__always)
   public static func buildArray(_ components: [String]) -> String {
     components.joined(separator: "\n")
-  }
-}
-
-private struct StorageValue: Sendable {
-  let element: Element
-  let escape: Bool
-
-  init<S: Sequence<UInt8>>(_ bytes: S, escape: Bool) {
-    self.element = .bytes(ContiguousArray(bytes))
-    self.escape = escape
-  }
-
-  init<T: HTML & Sendable>(_ html: T, escape: Bool) {
-    self.element = .html(_SendableAnyHTML(html))
-    self.escape = escape
-  }
-
-  enum Element: Sendable {
-    case bytes(ContiguousArray<UInt8>)
-    case html(_SendableAnyHTML)
-  }
-}
-
-private struct _HTMLOutputStreamProxy: HTMLByteStream {
-  let callback: (ContiguousArray<UInt8>) -> Void
-
-  mutating func write(_ bytes: consuming some Collection<UInt8>) {
-    callback(ContiguousArray(bytes))
-  }
-
-  mutating func write(_ byte: UInt8) {
-    callback([byte])
   }
 }

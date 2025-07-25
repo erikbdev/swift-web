@@ -1,9 +1,9 @@
-import Testing
 import HTML
+import Testing
 
 @Suite("Attributes testing")
 struct AttributesTests {
-  @Test func testSimpleAttribute() async throws {
+  @Test func testSimpleAttribute() {
     let html = p {}
       .attribute("select", value: "true")
       .render()
@@ -11,21 +11,21 @@ struct AttributesTests {
     #expect(html == #"<p select="true"></p>"#)
   }
 
-  @Test func testNilAttributeValue() async throws {
+  @Test func testNilAttributeValue() {
     let html = p {}
       .attribute("select", value: nil)
-    
+
     #expect(html.render() == #"<p></p>"#)
   }
 
-  @Test func testAttributeNoValue() async throws {
+  @Test func testAttributeNoValue() {
     let html = p {}
       .attribute("select")
-    
+
     #expect(html.render() == #"<p select></p>"#)
   }
 
-  @Test func testNestedAttribute() async throws {
+  @Test func testNestedAttribute() {
     let html = p {
       h1 {}
         .attribute("selected", value: "true")
@@ -35,7 +35,7 @@ struct AttributesTests {
     #expect(html.render() == #"<p><h1 selected="true"></h1><span></span></p>"#)
   }
 
-  @Test func appliesSameAttributeToLevelOneHTML() async throws {
+  @Test func appliesSameAttributeToLevelOneHTML() {
     let html = HTMLTuple(
       p {},
       div {},
@@ -46,7 +46,7 @@ struct AttributesTests {
     #expect(html.render() == #"<p selected></p><div selected></div><span selected></span>"#)
   }
 
-  @Test func replaceAttributeValue() async throws {
+  @Test func replaceAttributeValue() {
     let html = p {}
       .attribute("selected", value: "true")
       .attribute("selected")
@@ -54,7 +54,7 @@ struct AttributesTests {
     #expect(html.render() == #"<p selected></p>"#)
   }
 
-  @Test func mergeAttributeValues() async throws {
+  @Test func mergeAttributeValues() {
     let html = p {}
       .attribute("class", value: "test-0")
       .attribute("class", value: "test-1", mergeMode: .mergeValue)
@@ -62,7 +62,7 @@ struct AttributesTests {
     #expect(html.render() == #"<p class="test-0 test-1"></p>"#)
   }
 
-  @Test func ignoreIfSet() async throws {
+  @Test func ignoreIfSet() {
     let html = p {}
       .attribute("class", value: "test-0")
       .attribute("class", value: "test-1", mergeMode: .ignoreIfSet)
@@ -70,13 +70,11 @@ struct AttributesTests {
     #expect(html.render() == #"<p class="test-0"></p>"#)
   }
 
-  @Test func attributeOrder() async throws {
-    let html = HTMLTuple(
-      p {}
-        .attribute("data-test", value: "{}")
-    )
-    .attribute("class", value: "red-0")
-    .attribute("selected")
+  @Test func attributeOrder() {
+    let html = p {}
+      .attribute("data-test", value: "{}")
+      .attribute("class", value: "red-0")
+      .attribute("selected")
 
     #expect(html.render() == #"<p class="red-0" selected data-test="{}"></p>"#)
   }

@@ -3,6 +3,9 @@ import OrderedCollections
 public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
   public let rawValue: String
 
+  public typealias Closure<Content: AsyncHTML> = () -> Content
+  public typealias AsyncClosure<Content: AsyncHTML> =  @Sendable () async throws -> Content
+
   @inlinable @inline(__always)
   public init(_ rawValue: String) {
     self.rawValue = rawValue
@@ -22,26 +25,45 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
   public func callAsFunction(attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
     HTMLAttributes(
       content: HTMLElement(tag: rawValue, content: EmptyHTML.init),
-      attributes: .init(attributes)
+      attributes: OrderedSet(attributes)
     )
   }
 
   @inlinable @inline(__always)
-  public func callAsFunction<Content: HTML>(
+  public func callAsFunction<Content: AsyncHTML>(
     _ attributes: HTMLAttribute...,
-    @HTMLBuilder content: () -> Content
+    @HTMLBuilder content: Closure<Content>
   ) -> HTMLAttributes<HTMLElement<Content>> {
     self.callAsFunction(attributes: attributes, content: content)
   }
 
   @inlinable @inline(__always)
-  public func callAsFunction<Content: HTML>(
+  public func callAsFunction<Content: AsyncHTML>(
     attributes: [HTMLAttribute],
-    @HTMLBuilder content: () -> Content
+    @HTMLBuilder content: Closure<Content>
   ) -> HTMLAttributes<HTMLElement<Content>> {
     HTMLAttributes(
       content: HTMLElement(tag: rawValue, content: content),
-      attributes: .init(attributes)
+      attributes: OrderedSet(attributes)
+    )
+  }
+
+  @inlinable @inline(__always)
+  public func callAsFunction<Content: AsyncHTML>(
+    _ attributes: HTMLAttribute...,
+    @HTMLBuilder content: @escaping AsyncClosure<Content>
+  ) -> HTMLAttributes<HTMLElement<AsyncHTMLContent<Content>>> {
+    self.callAsFunction(attributes: attributes, content: content)
+  }
+
+  @inlinable @inline(__always)
+  public func callAsFunction<Content: AsyncHTML>(
+    attributes: [HTMLAttribute],
+    @HTMLBuilder content: @escaping AsyncClosure<Content>
+  ) -> HTMLAttributes<HTMLElement<AsyncHTMLContent<Content>>> {
+    HTMLAttributes(
+      content: HTMLElement(tag: rawValue, content: content),
+      attributes: OrderedSet(attributes)
     )
   }
 }
@@ -68,7 +90,7 @@ public struct HTMLVoidTag: Hashable, Sendable, ExpressibleByStringLiteral {
   public func callAsFunction(attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLVoidElement> {
     HTMLAttributes(
       content: HTMLVoidElement(tag: rawValue),
-      attributes: .init(attributes)
+      attributes: OrderedSet(attributes)
     )
   }
 }
@@ -162,7 +184,7 @@ public var s: HTMLTag { #function }
 public var samp: HTMLTag { #function }
 public func script(
   _ attributes: HTMLAttribute..., 
-  @StringBuilder stript stringValue: () -> String = { "" }
+  @HTMLString stript stringValue: () -> String = { "" }
 ) -> HTMLAttributes<HTMLElement<HTMLString>> {
   HTMLAttributes(
     content: HTMLElement(tag: "script") {
@@ -180,7 +202,7 @@ public var strong: HTMLTag { #function }
 public var style: HTMLTag { #function }
 public func style(
   _ attributes: HTMLAttribute..., 
-  @StringBuilder style stringValue: () -> String = { "" }
+  @HTMLString style stringValue: () -> String = { "" }
 ) -> HTMLAttributes<HTMLElement<HTMLString>> {
   HTMLAttributes(
     content: HTMLElement(tag: "style") {

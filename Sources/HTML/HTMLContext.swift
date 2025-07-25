@@ -9,10 +9,13 @@ public struct HTMLContext: Sendable {
   public var styles: StyleSheetGenerator?
   public var stylesheet: String { styles?.stylesheet() ?? "" }
 
+  @usableFromInline
   var depth = 0
+
+  @usableFromInline
   var currentIndentation: String { String(repeating: configuration.indentation, count: depth) }
 
-  public init(_ configuration: Configuration,) {
+  public init(_ configuration: Configuration) {
     self.configuration = configuration
   }
 

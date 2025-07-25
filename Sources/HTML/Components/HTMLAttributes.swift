@@ -1,12 +1,14 @@
 import Dependencies
 import OrderedCollections
 
-public struct HTMLAttributes<Content: HTML>: HTML {
+public struct HTMLAttributes<Content: AsyncHTML>: AsyncHTML {
   @usableFromInline
   let content: Content
 
   @usableFromInline
   var attributes: OrderedSet<HTMLAttribute>
+
+  public var body: Never { fatalError() }
 
   @inlinable @inline(__always)
   public init(
@@ -37,6 +39,33 @@ public struct HTMLAttributes<Content: HTML>: HTML {
   public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
+  ) async throws {
+    try await withDependencies {
+      for attr in html.attributes {
+        $0.htmlContext.attributes[attr.name] =
+          switch ($0.htmlContext.attributes[attr.name], attr.value, attr.mergeMode) {
+          case (.none, let newValue, .ignoreIfSet):
+            newValue
+          case (_, let newValue, .replaceValue):
+            newValue
+          case (.none, .some(let newValue), .mergeValue):
+            newValue
+          case (.some(let oldValue), .some(let newValue), .mergeValue):
+            oldValue.isEmpty ? newValue : "\(oldValue) \(newValue)"
+          case (let oldValue, _, _): oldValue
+          }
+      }
+    } operation: {
+      try await Content._render(html.content, into: &output)
+    }
+  }
+}
+
+extension HTMLAttributes: HTML where Content: HTML {
+  @_spi(Render)
+  public static func _render<Output: HTMLByteStream>(
+    _ html: consuming Self,
+    into output: inout Output
   ) {
     withDependencies {
       for attr in html.attributes {
@@ -57,8 +86,6 @@ public struct HTMLAttributes<Content: HTML>: HTML {
       Content._render(html.content, into: &output)
     }
   }
-
-  public var body: Never { fatalError() }
 }
 
 extension HTMLAttributes: Sendable where Content: Sendable {}

@@ -3,36 +3,11 @@ import Dependencies
 import DependenciesMacros
 import OrderedCollections
 
-extension HTML {
-  public func inlineStyle(
-    _ property: String,
-    _ value: String?,
-    media mediaQuery: InlineStyle.MediaQuery? = nil,
-    pre: InlineStyle.Selector = "",
-    pseudo: InlineStyle.Pseudo? = nil,
-    post: InlineStyle.Selector = ""
-  ) -> HTMLInlineStyle<Self> {
-    HTMLInlineStyle(
-      content: self,
-      styles: value.flatMap {
-        [
-          InlineStyle(
-            property: property,
-            value: $0,
-            media: mediaQuery,
-            preSelector: pre,
-            pseudoSelector: pseudo,
-            postSelector: post
-          )
-        ]
-      } ?? []
-    )
-  }
-}
-
-public struct HTMLInlineStyle<Content: HTML>: HTML {
+public struct HTMLInlineStyle<Content: AsyncHTML>: AsyncHTML {
   let content: Content
   var styles: OrderedSet<InlineStyle>
+
+  public var body: Never { fatalError() }
 
   public func inlineStyle(
     _ property: String,
@@ -62,6 +37,33 @@ public struct HTMLInlineStyle<Content: HTML>: HTML {
   public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
+  ) async throws {
+    try await withDependencies {
+      guard let ssg = $0.htmlContext.styles else {
+        for style in html.styles {
+          $0.htmlContext.attributes["style", default: ""]
+            .append("\(style.property): \(style.value);")
+        }
+        return
+      }
+
+      let classes = ssg.generate(html.styles)
+
+      guard !classes.isEmpty else { return }
+
+      $0.htmlContext.attributes["class", default: ""]
+        .append(($0.htmlContext.attributes.keys.contains("class") ? " " : "") + classes.joined(separator: " "))
+    } operation: {
+      try await Content._render(html.content, into: &output)
+    }
+  }
+}
+
+extension HTMLInlineStyle: HTML where Content: HTML {
+  @_spi(Render)
+  public static func _render<Output: HTMLByteStream>(
+    _ html: consuming Self,
+    into output: inout Output
   ) {
     withDependencies {
       guard let ssg = $0.htmlContext.styles else {
@@ -85,11 +87,36 @@ public struct HTMLInlineStyle<Content: HTML>: HTML {
       )
     }
   }
-
-  public var body: Never { fatalError() }
 }
 
 extension HTMLInlineStyle: Sendable where Content: Sendable {}
+
+extension HTML {
+  public func inlineStyle(
+    _ property: String,
+    _ value: String?,
+    media mediaQuery: InlineStyle.MediaQuery? = nil,
+    pre: InlineStyle.Selector = "",
+    pseudo: InlineStyle.Pseudo? = nil,
+    post: InlineStyle.Selector = ""
+  ) -> HTMLInlineStyle<Self> {
+    HTMLInlineStyle(
+      content: self,
+      styles: value.flatMap {
+        [
+          InlineStyle(
+            property: property,
+            value: $0,
+            media: mediaQuery,
+            preSelector: pre,
+            pseudoSelector: pseudo,
+            postSelector: post
+          )
+        ]
+      } ?? []
+    )
+  }
+}
 
 public struct InlineStyle: Sendable, Hashable {
   let property: String
