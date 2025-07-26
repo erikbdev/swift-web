@@ -19,10 +19,10 @@ public struct HTMLElement<Content: AsyncHTML>: AsyncHTML {
   }
 
   @inlinable @inline(__always)
-  public init<AwaitableContent: AsyncHTML>(
+  public init<Awaitable: AsyncHTML>(
     tag: String = #function, 
-    @HTMLBuilder content: @escaping @Sendable () async throws -> AwaitableContent
-  ) where Content == AsyncHTMLContent<AwaitableContent> {
+    @HTMLBuilder content: @escaping @Sendable () async throws -> Awaitable
+  ) where Content == AsyncHTMLContent<Awaitable> {
     self.tag = tag
     self.content = AsyncHTMLContent(content: content)
   }

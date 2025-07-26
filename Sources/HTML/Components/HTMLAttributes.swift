@@ -11,7 +11,7 @@ public struct HTMLAttributes<Content: AsyncHTML>: AsyncHTML {
   public var body: Never { fatalError() }
 
   @inlinable @inline(__always)
-  public init(
+  init(
     content: Content,
     attributes: OrderedSet<HTMLAttribute>
   ) {

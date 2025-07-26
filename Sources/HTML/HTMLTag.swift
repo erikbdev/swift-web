@@ -17,6 +17,13 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
   }
 
   @inlinable @inline(__always)
+  @_disfavoredOverload
+  public func callAsFunction() -> HTMLElement<EmptyHTML> {
+    HTMLElement(tag: rawValue, content: EmptyHTML.init)
+  }
+
+  @inlinable @inline(__always)
+  @_disfavoredOverload
   public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
     self.callAsFunction(attributes: attributes)
   }
@@ -30,6 +37,12 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
   }
 
   @inlinable @inline(__always)
+  public func callAsFunction<Content: AsyncHTML>(@HTMLBuilder content: Closure<Content>) -> HTMLElement<Content> {
+    HTMLElement(tag: rawValue, content: content)
+  }
+
+  @inlinable @inline(__always)
+  @_disfavoredOverload
   public func callAsFunction<Content: AsyncHTML>(
     _ attributes: HTMLAttribute...,
     @HTMLBuilder content: Closure<Content>
@@ -49,6 +62,12 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
   }
 
   @inlinable @inline(__always)
+  public func callAsFunction<Content: AsyncHTML>(@HTMLBuilder content: @escaping AsyncClosure<Content>) -> HTMLElement<AsyncHTMLContent<Content>> {
+    HTMLElement(tag: rawValue, content: content)
+  }
+
+  @inlinable @inline(__always)
+  @_disfavoredOverload
   public func callAsFunction<Content: AsyncHTML>(
     _ attributes: HTMLAttribute...,
     @HTMLBuilder content: @escaping AsyncClosure<Content>
@@ -82,6 +101,12 @@ public struct HTMLVoidTag: Hashable, Sendable, ExpressibleByStringLiteral {
   }
 
   @inlinable @inline(__always)
+  public func callAsFunction() -> HTMLVoidElement {
+    HTMLVoidElement(tag: rawValue)
+  }
+
+  @inlinable @inline(__always)
+  @_disfavoredOverload
   public func callAsFunction(_ attributes: HTMLAttribute...) -> HTMLAttributes<HTMLVoidElement> {
     self.callAsFunction(attributes: attributes)
   }

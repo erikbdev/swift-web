@@ -8,6 +8,11 @@ public struct HTMLGroup<Content: AsyncHTML>: AsyncHTML {
   }
 
   @inlinable @inline(__always)
+  public init<Awaitable: AsyncHTML>(@HTMLBuilder content: @escaping @Sendable () async throws -> Awaitable) where Content == AsyncHTMLContent<Awaitable> {
+    self.content = AsyncHTMLContent(content: content)
+  }
+
+  @inlinable @inline(__always)
   public var body: Content { content }
 }
 

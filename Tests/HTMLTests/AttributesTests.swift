@@ -76,6 +76,6 @@ struct AttributesTests {
       .attribute("class", value: "red-0")
       .attribute("selected")
 
-    #expect(html.render() == #"<p class="red-0" selected data-test="{}"></p>"#)
+    #expect(html.render() == #"<p data-test="{}" class="red-0" selected></p>"#)
   }
 }
