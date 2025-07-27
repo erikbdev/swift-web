@@ -3,22 +3,20 @@ import OrderedCollections
 
 public struct HTMLAttributes<Content: AsyncHTML>: AsyncHTML {
   @usableFromInline
-  let content: Content
+  var attributes: OrderedSet<HTMLAttribute>
 
   @usableFromInline
-  var attributes: OrderedSet<HTMLAttribute>
+  let content: Content
 
   public var body: Never { fatalError() }
 
   @inlinable @inline(__always)
-  init(
-    content: Content,
-    attributes: OrderedSet<HTMLAttribute>
-  ) {
+  init(attributes: OrderedSet<HTMLAttribute>, content: Content) {
     self.content = content
     self.attributes = attributes
   }
 
+  @inlinable @inline(__always)
   public func attribute(
     _ name: String,
     value: String? = "",
@@ -29,6 +27,7 @@ public struct HTMLAttributes<Content: AsyncHTML>: AsyncHTML {
     return copy
   }
 
+  @inlinable @inline(__always)
   public func attribute(_ attribute: HTMLAttribute) -> Self {
     var copy = self
     copy.attributes.append(attribute)
@@ -97,15 +96,15 @@ extension HTML {
     mergeMode: HTMLAttribute.MergeMode = .replaceValue
   ) -> HTMLAttributes<Self> {
     HTMLAttributes(
-      content: self,
-      attributes: [HTMLAttribute(name: name, value: value, mergeMode: mergeMode)]
+      attributes: [HTMLAttribute(name: name, value: value, mergeMode: mergeMode)],
+      content: self
     )
   }
 
   public func attribute(_ attribute: HTMLAttribute) -> HTMLAttributes<Self> {
     HTMLAttributes(
-      content: self,
-      attributes: [attribute]
+      attributes: [attribute],
+      content: self
     )
   }
 }

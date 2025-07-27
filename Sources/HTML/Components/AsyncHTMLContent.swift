@@ -1,4 +1,4 @@
-public struct AsyncHTMLContent<Content: AsyncHTML>: AsyncHTML, Sendable {
+public struct AsyncHTMLContent<Content: AsyncHTML>: AsyncHTML {
   @usableFromInline
   let content: @Sendable () async throws -> Content
 
@@ -21,3 +21,5 @@ public struct AsyncHTMLContent<Content: AsyncHTML>: AsyncHTML, Sendable {
 
 @available(*, unavailable, message: "'AsyncHTMLContent' cannot run in synchronous context.")
 extension AsyncHTMLContent: HTML where Content: HTML {}
+
+extension AsyncHTMLContent: Sendable where Content: Sendable {}

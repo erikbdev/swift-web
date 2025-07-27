@@ -1,14 +1,65 @@
-public struct ForEach<S: Sequence, Content: HTML>: HTML {
+public struct ForEach<S, Element, Content: AsyncHTML>: AsyncHTML {
   let sequence: S
-  let content: @Sendable (S.Element) -> Content
+  let content: @Sendable (Element) -> Content
 
   public var body: Never { fatalError() }
 
-  public init(_ sequence: S, @HTMLBuilder content: @escaping @Sendable (S.Element) -> Content) {
+  public init(
+    _ sequence: S,
+    @HTMLBuilder content: @escaping @Sendable (S.Element) -> Content
+  ) where S: Sequence, S.Element == Element {
     self.sequence = sequence
     self.content = content
   }
 
+  public init<Awaitable: AsyncHTML>(
+    _ sequence: S,
+    @HTMLBuilder content: @escaping @Sendable (S.Element) async throws -> Awaitable
+  ) where S: Sequence, S.Element == Element, Element: Sendable, Content == AsyncHTMLContent<Awaitable> {
+    self.init(sequence) { item in
+      AsyncHTMLContent { try await content(item) }
+    }
+  }
+
+  public init(
+    _ sequence: S,
+    @HTMLBuilder content: @escaping @Sendable (S.Element) -> Content
+  ) where S: AsyncSequence, S.Element == Element {
+    self.sequence = sequence
+    self.content = content
+  }
+
+  public init<Awaitable: AsyncHTML>(
+    _ sequence: S,
+    @HTMLBuilder content: @escaping @Sendable (S.Element) async throws -> Awaitable
+  ) where S: AsyncSequence, S.Element == Element, Element: Sendable, Content == AsyncHTMLContent<Awaitable> {
+    self.init(sequence) { item in
+      AsyncHTMLContent { try await content(item) }
+    }
+  }
+
+  @_spi(Render)
+  public static func _render<Output: HTMLByteStream>(
+    _ html: consuming Self,
+    into output: inout Output
+  ) async throws {
+    if let sequence = html.sequence as? any Sequence<Element> {
+      for element in sequence {
+        try await Content._render(html.content(element), into: &output)
+      }
+    } else if let sequence = html.sequence as? any AsyncSequence {
+      for try await element in sequence {
+        let unsafeElement = unsafeBitCast(element, to: Element.self)
+        try await Content._render(html.content(unsafeElement), into: &output)
+      }
+    } else {
+      fatalError("Unexpected issue with sync")
+    }
+  }
+}
+
+extension ForEach: HTML where S: Sequence, S.Element == Element, Content: HTML {
+  @_spi(Render)
   public static func _render<Output: HTMLByteStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -17,41 +68,6 @@ public struct ForEach<S: Sequence, Content: HTML>: HTML {
       Content._render(html.content(element), into: &output)
     }
   }
-
-  public static func _render<Output: HTMLByteStream>(
-    _ html: consuming Self,
-    into output: inout Output
-  ) async throws {
-    for element in html.sequence {
-      try await Content._render(html.content(element), into: &output)
-    }
-  }
 }
 
-extension ForEach: Sendable where S: Sendable, Content: Sendable {}
-
-public struct AsyncForEach<S: AsyncSequence, Content: AsyncHTML>: AsyncHTML {
-  let sequence: S
-  let content: @Sendable (S.Element) -> Content
-
-  public var body: Never { fatalError() }
-
-  public init(_ sequence: S, @HTMLBuilder content: @escaping @Sendable (S.Element) -> Content) {
-    self.sequence = sequence
-    self.content = content
-  }
-
-  public static func _render<Output: HTMLByteStream>(
-    _ html: consuming Self,
-    into output: inout Output
-  ) async throws {
-    for try await element in html.sequence {
-      try await Content._render(html.content(element), into: &output)
-    }
-  }
-}
-
-extension AsyncForEach: Sendable where S: Sendable, Content: Sendable {}
-
-@available(*, unavailable, message: "'AsyncForEach' does not support synchronous context")
-extension AsyncForEach: HTML where Content: HTML {}
+extension ForEach: Sendable where S: Sendable, Element: Sendable, Content: Sendable {}

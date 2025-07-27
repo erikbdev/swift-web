@@ -64,7 +64,34 @@ public struct AnyHTML: HTML {
   }
 }
 
-public struct AnyHTMLSendable: HTML, Sendable {
+public struct AnySendableAsyncHTML: AsyncHTML, Sendable {
+  @usableFromInline
+  var base: any AsyncHTML & Sendable
+
+  public var body: Never { fatalError() }
+
+  @inlinable @inline(__always)
+  public init(_ base: some AsyncHTML & Sendable) {
+    if let base = base as? Self {
+      self = base
+    } else {
+      self.base = base
+    }
+  }
+
+  @_spi(Render)
+  public static func _render<Output: HTMLByteStream>(
+    _ html: consuming Self,
+    into output: inout Output
+  ) async throws {
+    func _render<T: AsyncHTML>(_ html: T) async throws {
+      try await T._render(html, into: &output)
+    }
+    try await _render(html.base)
+  }
+}
+
+public struct AnySendableHTML: HTML, Sendable {
   @usableFromInline
   var base: any HTML & Sendable
 
@@ -72,7 +99,7 @@ public struct AnyHTMLSendable: HTML, Sendable {
 
   @inlinable @inline(__always)
   public init(_ base: some HTML & Sendable) {
-    if let base = base as? AnyHTMLSendable {
+    if let base = base as? Self {
       self = base
     } else {
       self.base = base

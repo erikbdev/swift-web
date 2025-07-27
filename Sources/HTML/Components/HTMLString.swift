@@ -6,7 +6,7 @@ public let HTMLRaw = HTMLString.init(raw:)
 /// This is a typealias of ``HTMLString(_:)``
 public let HTMLText = HTMLString.init(_:)
 
-@resultBuilder
+// @resultBuilder
 public struct HTMLString: HTML, Sendable, ExpressibleByStringLiteral, ExpressibleByStringInterpolation {
   private var _storage: [StorageValue]
 
@@ -66,7 +66,7 @@ public struct HTMLString: HTML, Sendable, ExpressibleByStringLiteral, Expressibl
               }
             }
           }
-          AnyHTMLSendable._render(html, into: &proxy)
+          AnySendableHTML._render(html, into: &proxy)
         }
       }
     }
@@ -126,20 +126,21 @@ private struct StorageValue: Sendable {
   }
 
   init<T: HTML & Sendable>(_ html: T, escape: Bool) {
-    self.element = .html(AnyHTMLSendable(html))
+    self.element = .html(AnySendableHTML(html))
     self.escape = escape
   }
 
   enum Element: Sendable {
     case bytes(ContiguousArray<UInt8>)
-    case html(AnyHTMLSendable)
+    case html(AnySendableHTML)
   }
 }
 
 private struct _HTMLByteStreamProxy: HTMLByteStream {
   let callback: (ContiguousArray<UInt8>) -> Void
 
-  mutating func write(_ byte: consuming UInt8) {        
+  mutating func write(_ byte: consuming UInt8) {
+    callback(ContiguousArray(arrayLiteral: byte))
   }
 
   mutating func write(_ bytes: consuming some Sequence<UInt8>) {
@@ -148,34 +149,34 @@ private struct _HTMLByteStreamProxy: HTMLByteStream {
 }
 
 // Result builder
-extension HTMLString {
-  @inlinable @inline(__always)
-  public static func buildPartialBlock(first: String) -> String {
-    first
-  }
+// extension HTMLString {
+//   @inlinable @inline(__always)
+//   public static func buildPartialBlock(first: String) -> String {
+//     first
+//   }
 
-  @inlinable @inline(__always)
-  public static func buildPartialBlock(accumulated: String, next: String) -> String {
-    accumulated + "\n" + next
-  }
+//   @inlinable @inline(__always)
+//   public static func buildPartialBlock(accumulated: String, next: String) -> String {
+//     accumulated + "\n" + next
+//   }
 
-  @inlinable @inline(__always)
-  public static func buildEither(first component: String) -> String {
-    component
-  }
+//   @inlinable @inline(__always)
+//   public static func buildEither(first component: String) -> String {
+//     component
+//   }
 
-  @inlinable @inline(__always)
-  public static func buildEither(second component: String) -> String {
-    component
-  }
+//   @inlinable @inline(__always)
+//   public static func buildEither(second component: String) -> String {
+//     component
+//   }
 
-  @inlinable @inline(__always)
-  public static func buildOptional(_ component: String?) -> String {
-    component ?? ""
-  }
+//   @inlinable @inline(__always)
+//   public static func buildOptional(_ component: String?) -> String {
+//     component ?? ""
+//   }
 
-  @inlinable @inline(__always)
-  public static func buildArray(_ components: [String]) -> String {
-    components.joined(separator: "\n")
-  }
-}
+//   @inlinable @inline(__always)
+//   public static func buildArray(_ components: [String]) -> String {
+//     components.joined(separator: "\n")
+//   }
+// }

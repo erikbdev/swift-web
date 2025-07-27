@@ -1,17 +1,11 @@
 public struct HTMLComment: HTML, Sendable {
-  @usableFromInline
-  let bytes: ContiguousArray<UInt8>
+  public let text: String
 
   public var body: Never { fatalError() }
 
-  @inlinable @inline(__always)
-  public init(_ comment: consuming String) {
-    self.init(comment.utf8)
-  }
-
-  @inlinable @inline(__always)
-  public init(_ comment: consuming some Sequence<UInt8>) {
-    self.bytes = ContiguousArray(comment)
+  @inlinable
+  public init(_ text: consuming String) {
+    self.text = text
   }
 
   private static let start: [UInt8] = [0x3C, 0x21, 0x2D, 0x2D]  // <!--
@@ -23,7 +17,7 @@ public struct HTMLComment: HTML, Sendable {
     into output: inout Output
   ) {
     output.write(start)
-    HTMLString._render(HTMLString(html.bytes, escape: true), into: &output)  // comment
+    HTMLString._render(HTMLString(html.text), into: &output)  // comment
     output.write(end) 
   }
 
@@ -33,7 +27,7 @@ public struct HTMLComment: HTML, Sendable {
     into output: inout Output
   ) async throws {
     output.write(start)
-    try await HTMLString._render(HTMLString(html.bytes, escape: true), into: &output)  // comment
+    try await HTMLString._render(HTMLString(html.text), into: &output)  // comment
     output.write(end)
   }
 }

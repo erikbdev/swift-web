@@ -31,8 +31,8 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
   @inlinable @inline(__always)
   public func callAsFunction(attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLElement<EmptyHTML>> {
     HTMLAttributes(
-      content: HTMLElement(tag: rawValue, content: EmptyHTML.init),
-      attributes: OrderedSet(attributes)
+      attributes: OrderedSet(attributes),
+      content: HTMLElement(tag: rawValue, content: EmptyHTML.init)
     )
   }
 
@@ -56,8 +56,8 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
     @HTMLBuilder content: Closure<Content>
   ) -> HTMLAttributes<HTMLElement<Content>> {
     HTMLAttributes(
+      attributes: OrderedSet(attributes),
       content: HTMLElement(tag: rawValue, content: content),
-      attributes: OrderedSet(attributes)
     )
   }
 
@@ -81,8 +81,8 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
     @HTMLBuilder content: @escaping AsyncClosure<Content>
   ) -> HTMLAttributes<HTMLElement<AsyncHTMLContent<Content>>> {
     HTMLAttributes(
-      content: HTMLElement(tag: rawValue, content: content),
-      attributes: OrderedSet(attributes)
+      attributes: OrderedSet(attributes),
+      content: HTMLElement(tag: rawValue, content: content)
     )
   }
 }
@@ -114,8 +114,8 @@ public struct HTMLVoidTag: Hashable, Sendable, ExpressibleByStringLiteral {
   @inlinable @inline(__always)
   public func callAsFunction(attributes: [HTMLAttribute]) -> HTMLAttributes<HTMLVoidElement> {
     HTMLAttributes(
-      content: HTMLVoidElement(tag: rawValue),
-      attributes: OrderedSet(attributes)
+      attributes: OrderedSet(attributes),
+      content: HTMLVoidElement(tag: rawValue)
     )
   }
 }
@@ -209,13 +209,28 @@ public var s: HTMLTag { #function }
 public var samp: HTMLTag { #function }
 public func script(
   _ attributes: HTMLAttribute..., 
-  @HTMLString stript stringValue: () -> String = { "" }
+  stript text: () -> String = { "" }
 ) -> HTMLAttributes<HTMLElement<HTMLString>> {
-  HTMLAttributes(
-    content: HTMLElement(tag: "script") {
-      HTMLString(raw: stringValue())
+  let text = text()
+  var escaped = ""
+  escaped.unicodeScalars.reserveCapacity(text.unicodeScalars.count)
+  for index in text.unicodeScalars.indices {
+    let scalar = text.unicodeScalars[index]
+    if scalar == "<",
+      text.unicodeScalars[index...].starts(with: "<!--".unicodeScalars)
+        || text.unicodeScalars[index...].starts(with: "<script".unicodeScalars)
+        || text.unicodeScalars[index...].starts(with: "</script".unicodeScalars)
+    {
+      escaped.unicodeScalars.append(contentsOf: #"\x3C"#.unicodeScalars)
+    } else {
+      escaped.unicodeScalars.append(scalar)
+    }
+  }
+  return HTMLAttributes(
+    attributes: OrderedSet(attributes),
+    content: tag("script") {
+      HTMLRaw(text)
     },
-    attributes: OrderedSet(attributes)
   )
 }
 public var section: HTMLTag { #function }
@@ -227,13 +242,13 @@ public var strong: HTMLTag { #function }
 public var style: HTMLTag { #function }
 public func style(
   _ attributes: HTMLAttribute..., 
-  @HTMLString style stringValue: () -> String = { "" }
+  style stringValue: () -> String = { "" }
 ) -> HTMLAttributes<HTMLElement<HTMLString>> {
   HTMLAttributes(
+    attributes: OrderedSet(attributes),
     content: HTMLElement(tag: "style") {
       HTMLString(raw: stringValue())
-    },
-    attributes: OrderedSet(attributes)
+    }
   )
 }
 public var sub: HTMLTag { #function }

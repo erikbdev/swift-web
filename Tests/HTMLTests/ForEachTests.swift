@@ -3,7 +3,7 @@ import Testing
 
 @Suite("ForEach rendering tests")
 struct ForEachTests {
-  @Test func rendersSyncArray() {
+  @Test func rendersSequence() {
     let html = ForEach([0, 1, 2]) { idx in
       p { "\(idx)" }
     }
@@ -11,9 +11,17 @@ struct ForEachTests {
     #expect(html.render() == "<p>0</p><p>1</p><p>2</p>")
   }
 
-  @Test func rendersAsyncArray() async throws {
+  @Test func rendersSequenceAsync() async throws {
+    let html = ForEach([0, 1, 2]) { idx in
+      p { "\(idx)" }
+    }
+
+    try await #expect(html.render() == "<p>0</p><p>1</p><p>2</p>")
+  }
+
+  @Test func rendersAsyncSequence() async throws {
     let stream = AsyncStream { c in c.yield(0); c.yield(1); c.yield(2); c.finish() }
-    let html = AsyncForEach(stream) { idx in
+    let html = ForEach(stream) { idx in
       p { "\(idx)" }
     }
 

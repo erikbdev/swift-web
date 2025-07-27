@@ -17,3 +17,4 @@ public struct HTMLGroup<Content: AsyncHTML>: AsyncHTML {
 }
 
 extension HTMLGroup: HTML where Content: HTML {}
+extension HTMLGroup: Sendable where Content: Sendable {}

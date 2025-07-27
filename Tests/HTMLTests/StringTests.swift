@@ -22,23 +22,4 @@ struct StringTests {
       #expect(HTMLRaw("<p></p>") == "<p></p>")      
       #expect(HTMLText("<p></p>") == "&lt;p>&lt;/p>")
   }
-
-  @Test func testHTMLStringBuilder() {
-    func build(@HTMLString build: () -> String) -> String {
-      build()
-    }
-
-    let string = build {
-      "Hello"
-      "This is a test."
-    }
-
-    #expect(
-      string == 
-      """
-      Hello
-      This is a test.
-      """
-    )
-  }
 }

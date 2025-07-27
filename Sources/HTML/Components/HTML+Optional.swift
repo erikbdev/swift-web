@@ -23,3 +23,5 @@ extension Optional: HTML where Wrapped: HTML {
     }
   }
 }
+
+extension Optional: Sendable where Wrapped: Sendable {}

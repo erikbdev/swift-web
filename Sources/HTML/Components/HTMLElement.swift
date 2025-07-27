@@ -74,8 +74,6 @@ extension HTMLElement: HTML where Content: HTML {
   }
 }
 
-extension HTMLElement: Sendable where Content: Sendable {}
-
 public struct HTMLVoidElement: HTML, Sendable {
   public let tag: String
 
@@ -129,3 +127,5 @@ public struct HTMLVoidElement: HTML, Sendable {
     _render(html)
   }
 }
+
+extension HTMLElement: Sendable where Content: Sendable {}
