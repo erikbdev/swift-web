@@ -11,7 +11,7 @@ public struct HTMLTuple<each Content: AsyncHTML>: AsyncHTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
@@ -25,7 +25,7 @@ public struct HTMLTuple<each Content: AsyncHTML>: AsyncHTML {
 
 extension HTMLTuple: HTML where repeat each Content: HTML {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {

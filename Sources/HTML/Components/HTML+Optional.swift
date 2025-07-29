@@ -2,7 +2,7 @@ extension Optional: AsyncHTML where Wrapped: AsyncHTML {
   public var body: Never { fatalError() }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
@@ -14,7 +14,7 @@ extension Optional: AsyncHTML where Wrapped: AsyncHTML {
 
 extension Optional: HTML where Wrapped: HTML {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {

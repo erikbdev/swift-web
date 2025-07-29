@@ -34,52 +34,43 @@ public struct HTMLInlineStyle<Content: AsyncHTML>: AsyncHTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
     try await withDependencies {
-      guard let ssg = $0.htmlContext.styles else {
-        for style in html.styles {
-          $0.htmlContext.attributes["style", default: ""]
-            .append("\(style.property): \(style.value);")
-        }
-        return
-      }
-
-      let classes = ssg.generate(html.styles)
-
-      guard !classes.isEmpty else { return }
-
-      $0.htmlContext.attributes["class", default: ""]
-        .append(($0.htmlContext.attributes.keys.contains("class") ? " " : "") + classes.joined(separator: " "))
+      html.resolveStyles(&$0.htmlContext)
     } operation: {
       try await Content._render(html.content, into: &output)
     }
+  }
+
+  private func resolveStyles(_ htmlContext: inout HTMLContext) {
+    guard let ssg = htmlContext.styles else {
+      for style in self.styles {
+        htmlContext.attributes["style", default: ""]
+          .append("\(style.property): \(style.value);")
+      }
+      return
+    }
+
+    let classes = ssg.generate(self.styles)
+
+    guard !classes.isEmpty else { return }
+
+    htmlContext.attributes["class", default: ""]
+      .append((htmlContext.attributes.keys.contains("class") ? " " : "") + classes.joined(separator: " "))
   }
 }
 
 extension HTMLInlineStyle: HTML where Content: HTML {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
     withDependencies {
-      guard let ssg = $0.htmlContext.styles else {
-        for style in html.styles {
-          $0.htmlContext.attributes["style", default: ""]
-            .append("\(style.property): \(style.value);")
-        }
-        return
-      }
-
-      let classes = ssg.generate(html.styles)
-
-      guard !classes.isEmpty else { return }
-
-      $0.htmlContext.attributes["class", default: ""]
-        .append(($0.htmlContext.attributes.keys.contains("class") ? " " : "") + classes.joined(separator: " "))
+      html.resolveStyles(&$0.htmlContext)
     } operation: {
       Content._render(
         html.content,

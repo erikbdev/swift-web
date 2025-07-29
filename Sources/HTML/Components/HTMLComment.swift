@@ -12,7 +12,7 @@ public struct HTMLComment: HTML, Sendable {
   private static let end: [UInt8] = [0x2D, 0x2D, 0x3E]  // -->
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming HTMLComment,
     into output: inout Output
   ) {
@@ -22,12 +22,12 @@ public struct HTMLComment: HTML, Sendable {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
-    output.write(start)
+    try await output.write(start)
     try await HTMLString._render(HTMLString(html.text), into: &output)  // comment
-    output.write(end)
+    try await output.write(end)
   }
 }

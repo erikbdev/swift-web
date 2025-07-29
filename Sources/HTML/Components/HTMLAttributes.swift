@@ -35,52 +35,43 @@ public struct HTMLAttributes<Content: AsyncHTML>: AsyncHTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
     try await withDependencies {
-      for attr in html.attributes {
-        $0.htmlContext.attributes[attr.name] =
-          switch ($0.htmlContext.attributes[attr.name], attr.value, attr.mergeMode) {
-          case (.none, let newValue, .ignoreIfSet):
-            newValue
-          case (_, let newValue, .replaceValue):
-            newValue
-          case (.none, .some(let newValue), .mergeValue):
-            newValue
-          case (.some(let oldValue), .some(let newValue), .mergeValue):
-            oldValue.isEmpty ? newValue : "\(oldValue) \(newValue)"
-          case (let oldValue, _, _): oldValue
-          }
-      }
+      html.resolveAttributes(&$0.htmlContext.attributes)
     } operation: {
       try await Content._render(html.content, into: &output)
+    }
+  }
+
+  private func resolveAttributes(_ storedAttributes: inout OrderedDictionary<String, String>) {
+    for attr in self.attributes {
+      storedAttributes[attr.name] =
+        switch (storedAttributes[attr.name], attr.value, attr.mergeMode) {
+        case (.none, let newValue, .ignoreIfSet):
+          newValue
+        case (_, let newValue, .replaceValue):
+          newValue
+        case (.none, .some(let newValue), .mergeValue):
+          newValue
+        case (.some(let oldValue), .some(let newValue), .mergeValue):
+          oldValue.isEmpty ? newValue : "\(oldValue) \(newValue)"
+        case (let oldValue, _, _): oldValue
+        }
     }
   }
 }
 
 extension HTMLAttributes: HTML where Content: HTML {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
     withDependencies {
-      for attr in html.attributes {
-        $0.htmlContext.attributes[attr.name] =
-          switch ($0.htmlContext.attributes[attr.name], attr.value, attr.mergeMode) {
-          case (.none, let newValue, .ignoreIfSet):
-            newValue
-          case (_, let newValue, .replaceValue):
-            newValue
-          case (.none, .some(let newValue), .mergeValue):
-            newValue
-          case (.some(let oldValue), .some(let newValue), .mergeValue):
-            oldValue.isEmpty ? newValue : "\(oldValue) \(newValue)"
-          case (let oldValue, _, _): oldValue
-          }
-      }
+      html.resolveAttributes(&$0.htmlContext.attributes)
     } operation: {
       Content._render(html.content, into: &output)
     }

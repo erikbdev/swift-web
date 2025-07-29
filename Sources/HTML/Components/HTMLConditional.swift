@@ -6,7 +6,7 @@ public enum _HTMLConditional<TrueContent: AsyncHTML, FalseContent: AsyncHTML>: A
   public var body: Never { fatalError() }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
@@ -19,7 +19,7 @@ public enum _HTMLConditional<TrueContent: AsyncHTML, FalseContent: AsyncHTML>: A
 
 extension _HTMLConditional: HTML where TrueContent: HTML, FalseContent: HTML {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {

@@ -1,6 +1,6 @@
 import Dependencies
 
-public protocol HTMLDocument: AsyncHTML where Body: AsyncHTML {
+public protocol HTMLDocument: AsyncHTML {
   associatedtype Head: AsyncHTML
 
   @HTMLBuilder var head: Head { get }
@@ -8,17 +8,17 @@ public protocol HTMLDocument: AsyncHTML where Body: AsyncHTML {
 
 extension HTMLDocument {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ document: consuming Self,
     into output: inout Output
   ) async throws {
     @Dependency(\.htmlContext) var context
 
-    let documentBody: _HTMLConditional<_HTMLBytes, Body>
+    let documentBody: _HTMLConditional<_HTMLBuffer, Body>
     let stylesheet: String
 
     if let ssg = context.styles {
-      var bodyBytes = _HTMLBytes()
+      var bodyBytes = _HTMLBuffer()
       try await Body._render(document.body, into: &bodyBytes)
       stylesheet = ssg.stylesheet()
       documentBody = .trueContent(bodyBytes)
@@ -27,40 +27,42 @@ extension HTMLDocument {
       documentBody = .falseContent(document.body)
     }
 
-    try await HTMLGroup {
-      HTMLDoctype()
-      tag("html") {
-        tag("head") {
-          document.head
+    try await HTMLGroup._render(
+      HTMLGroup {
+        HTMLDoctype()
+        tag("html") {
+          tag("head") {
+            document.head
 
-          if !stylesheet.isEmpty {
-            style {
-              HTMLRaw(stylesheet)
+            if !stylesheet.isEmpty {
+              style {
+                HTMLRaw(stylesheet)
+              }
             }
           }
+          tag("body") {
+            documentBody
+          }
         }
-        tag("body") {
-          documentBody
-        }
-      }
-    }
-    .render(into: &output)
+      },
+      into: &output
+    )
   }
 }
 
 extension HTMLDocument where Head: HTML, Body: HTML {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ document: consuming Self,
     into output: inout Output
   ) {
     @Dependency(\.htmlContext) var context
 
-    let documentBody: _HTMLConditional<_HTMLBytes, Body>
+    let documentBody: _HTMLConditional<_HTMLBuffer, Body>
     let stylesheet: String
 
     if let ssg = context.styles {
-      var bodyBytes = _HTMLBytes()
+      var bodyBytes = _HTMLBuffer()
       Body._render(document.body, into: &bodyBytes)
       stylesheet = ssg.stylesheet()
       documentBody = .trueContent(bodyBytes)
@@ -69,53 +71,26 @@ extension HTMLDocument where Head: HTML, Body: HTML {
       documentBody = .falseContent(document.body)
     }
 
-    HTMLGroup {
-      HTMLDoctype()
-      html {
-        tag("head") {
-          document.head
+    HTMLGroup._render(
+      HTMLGroup {
+        HTMLDoctype()
+        tag("html") {
+          tag("head") {
+            document.head
 
-          if !stylesheet.isEmpty {
-            style {
-              HTMLRaw(stylesheet)
+            if !stylesheet.isEmpty {
+              style {
+                HTMLRaw(stylesheet)
+              }
             }
           }
+
+          tag("body") {
+            documentBody
+          }
         }
-
-        tag("body") {
-          documentBody
-        }
-      }
-    }
-    .render(into: &output)
+      },
+      into: &output
+    )
   }
-}
-
-private struct _HTMLBytes: HTML, Sendable, HTMLByteStream {
-  var bytes: ContiguousArray<UInt8> = []
-
-  mutating func write(_ byte: UInt8) {
-    self.bytes.append(byte)
-  }
-
-  mutating func write(_ bytes: consuming some Sequence<UInt8>) {
-    self.bytes.append(contentsOf: bytes)
-  }
-
-  static func _render<Output: HTMLByteStream>(
-    _ html: consuming _HTMLBytes,
-    into output: inout Output
-  ) {
-    output.write(html.bytes)
-  }
-
-  @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
-    _ html: consuming Self,
-    into output: inout Output
-  ) async throws {
-    output.write(html.bytes)
-  }
-
-  var body: Never { fatalError() }
 }

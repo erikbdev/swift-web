@@ -1,5 +1,6 @@
 import Dependencies
 import OrderedCollections
+import struct Foundation.Data
 
 public struct HTMLElement<Content: AsyncHTML>: AsyncHTML {
   public let tag: String
@@ -28,8 +29,7 @@ public struct HTMLElement<Content: AsyncHTML>: AsyncHTML {
   }
 
   @_spi(Render)
-  @inlinable @inline(__always)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
@@ -43,17 +43,18 @@ public struct HTMLElement<Content: AsyncHTML>: AsyncHTML {
     } operation: {
       try await Content._render(html.content, into: &output)
     }
-    output.write(0x3C)  // <
-    output.write(0x2F)  // /
-    output.write(html.tag.utf8)  // <tag-name>
-    output.write(0x3E)  // >
+    var buffer = Data()
+    buffer.append(0x3C)  // <
+    buffer.append(0x2F)  // /
+    buffer.append(contentsOf: html.tag.utf8)  // <tag-name>
+    buffer.append(0x3E)  // >
+    try await output.write(buffer)
   }
 }
 
 extension HTMLElement: HTML where Content: HTML {
   @_spi(Render)
-  @inlinable @inline(__always)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
@@ -67,10 +68,12 @@ extension HTMLElement: HTML where Content: HTML {
     } operation: {
       Content._render(html.content, into: &output)
     }
-    output.write(0x3C)  // <
-    output.write(0x2F)  // /
-    output.write(html.tag.utf8)  // <tag-name>
-    output.write(0x3E)  // >
+    var buffer = Data()
+    buffer.append(0x3C)  // <
+    buffer.append(0x2F)  // /
+    buffer.append(contentsOf: html.tag.utf8)  // <tag-name>
+    buffer.append(0x3E)  // >
+    output.write(buffer)
   }
 }
 
@@ -85,46 +88,51 @@ public struct HTMLVoidElement: HTML, Sendable {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
-    into output: inout Output
+    into writer: inout Output
   ) {
-    @Dependency(\.htmlContext) var context
-    output.write(0x3C)  // <
-    output.write(html.tag.utf8)  // tag-name
-    for (name, value) in context.attributes {
-      output.write(0x20)  // space
-      output.write(name.utf8)  // <name>
-      if !value.isEmpty {
-        output.write(0x3D)  // =
-        output.write(0x22)  // "
-        for byte in value.utf8 {
-          switch byte {
-          case 0x26:  // &
-            output.write("&amp;".utf8)
-          case 0x22:  // "
-            output.write("&quot;".utf8)
-          case 0x27:  // '
-            output.write("&#39;".utf8)
-          default:
-            output.write(byte)
-          }
-        }
-        output.write(0x22)  // "
-      }
-    }
-    output.write(0x3E)  // >
+    var buffer = Data()
+    html.writeBytes(&buffer)
+    writer.write(buffer)
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
-    func _render(_ html: consuming Self) {
-      Self._render(html, into: &output)
+    var buffer = Data()
+    html.writeBytes(&buffer)
+    try await output.write(buffer)
+  }
+
+  private func writeBytes(_ buffer: inout Data) {
+    @Dependency(\.htmlContext) var context
+    buffer.append(0x3C)  // <
+    buffer.append(contentsOf: self.tag.utf8)  // tag-name
+    for (name, value) in context.attributes {
+      buffer.append(0x20)  // space
+      buffer.append(contentsOf: name.utf8)  // <name>
+      if !value.isEmpty {
+        buffer.append(0x3D)  // =
+        buffer.append(0x22)  // "
+        for byte in value.utf8 {
+          switch byte {
+          case 0x26:  // &
+            buffer.append(contentsOf: "&amp;".utf8)
+          case 0x22:  // "
+            buffer.append(contentsOf: "&quot;".utf8)
+          case 0x27:  // '
+            buffer.append(contentsOf: "&#39;".utf8)
+          default:
+            buffer.append(byte)
+          }
+        }
+        buffer.append(0x22)  // "
+      }
     }
-    _render(html)
+    buffer.append(0x3E)  // >
   }
 }
 

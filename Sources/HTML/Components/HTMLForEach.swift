@@ -39,7 +39,7 @@ public struct ForEach<S, Element, Content: AsyncHTML>: AsyncHTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
@@ -53,14 +53,14 @@ public struct ForEach<S, Element, Content: AsyncHTML>: AsyncHTML {
         try await Content._render(html.content(unsafeElement), into: &output)
       }
     } else {
-      fatalError("Unexpected issue with sync")
+      fatalError("Expected a sequence that implements Sequence<\(Element.self)> or AsyncSequence<\(Element.self)> but instead received \(S.self).")
     }
   }
 }
 
 extension ForEach: HTML where S: Sequence, S.Element == Element, Content: HTML {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {

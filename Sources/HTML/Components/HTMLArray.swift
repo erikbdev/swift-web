@@ -10,7 +10,7 @@ public struct _HTMLArray<Element: AsyncHTML>: AsyncHTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
@@ -22,7 +22,7 @@ public struct _HTMLArray<Element: AsyncHTML>: AsyncHTML {
 
 extension _HTMLArray: HTML where Element: HTML {
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self, 
     into output: inout Output
   ) {

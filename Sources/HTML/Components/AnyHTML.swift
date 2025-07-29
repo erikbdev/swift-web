@@ -14,7 +14,7 @@ public struct AnyAsyncHTML: AsyncHTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
@@ -41,7 +41,7 @@ public struct AnyHTML: HTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
@@ -52,8 +52,8 @@ public struct AnyHTML: HTML {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
-    _ html: consuming AnyHTML, 
+  public static func _render<Output: AsyncHTMLOutputStream>(
+    _ html: consuming Self, 
     into output: inout Output
   ) async throws {
     try await AnyAsyncHTML._render(html.eraseToAnyAsyncHTML(), into: &output)
@@ -80,7 +80,7 @@ public struct AnySendableAsyncHTML: AsyncHTML, Sendable {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
@@ -107,7 +107,7 @@ public struct AnySendableHTML: HTML, Sendable {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) {
@@ -118,7 +118,7 @@ public struct AnySendableHTML: HTML, Sendable {
   }
 
   @_spi(Render)
-  public static func _render<Output: HTMLByteStream>(
+  public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
   ) async throws {
