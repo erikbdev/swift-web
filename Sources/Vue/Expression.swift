@@ -91,7 +91,7 @@ extension Expression: ExpressibleByFloatLiteral where Value == Double {
 
 extension Expression: ExpressibleByArrayLiteral where Value == [AnyEncodable] {
   public init(arrayLiteral elements: (any Encodable)...) {
-    self.init(elements.map(AnyEncodable.init(base:)))
+    self.init(elements.map { AnyEncodable(base: $0) })
   }
 }
 
@@ -100,11 +100,12 @@ extension Expression: CustomStringConvertible {
   public var description: String { rawValue }
 }
 
-// extension Expression: ExpressibleByDictionaryLiteral {
-//   public init(dictionaryLiteral elements: (String, any Encodable)...) {
-//     self.init(Dictionary(elements, uniquingKeysWith: { $1 }))
-//   }
-// }
+extension Expression: ExpressibleByDictionaryLiteral where Value == [String: AnyEncodable] {
+  public init(dictionaryLiteral elements: (String, any Encodable)...) {
+    let elements = elements.compactMap { ($0, AnyEncodable(base: $1)) }
+    self.init(Dictionary(elements, uniquingKeysWith: { $1 }))
+  }
+}
 
 extension Expression {
   public func callAsFunction<each T: Encodable>(_ args: repeat each T) -> AnyExpression {
@@ -200,6 +201,14 @@ public typealias AnyExpression = Expression<Never>
 
 public struct AnyEncodable: Encodable, @unchecked Sendable {
   let base: any Encodable
+
+  init<Base: Encodable>(base: Base) {
+    if let base = base as? AnyEncodable {
+      self.base = base.base
+    } else {
+      self.base = base
+    }
+  }
 
   public func encode(to encoder: any Encoder) throws {
     try base.encode(to: encoder)

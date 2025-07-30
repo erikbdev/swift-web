@@ -4,6 +4,7 @@ import SwiftSyntaxMacros
 @main
 struct MacrosPlugin: CompilerPlugin {
   var providingMacros: [any Macro.Type] = [
-    VueScopeMacro.self
+    VueScopeMacro.self,
+    VueComponentMacro.self
   ]
 }
