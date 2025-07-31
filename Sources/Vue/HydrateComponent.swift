@@ -28,7 +28,7 @@ public struct HydrateComponent<Content: AsyncHTML>: AsyncHTML {
     div {
       content(.server)
     }
-    .attribute("v-else")
+    .attribute("v-effect", value: "$el.previousElementSibling.getAttribute(\"v-cloak\") == null && $el.setAttribute(\"hidden\", \"\")")
   }
 }
 
