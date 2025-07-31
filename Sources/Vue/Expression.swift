@@ -20,6 +20,11 @@ public struct Expression<Value: Sendable>: Sendable {
       }
   }
 
+  @_disfavoredOverload
+  public init<each T: Encodable>(_ expression: repeat Expression<each T>) where Value == [String: AnyEncodable] {
+    self.init(repeat ((each expression).rawValue, (each expression).initialValue))
+  }
+
   /// Accept a encoded value
   public init(_ value: Value) where Value: Encodable {
     self.base = { value }
@@ -134,6 +139,10 @@ extension Expression {
   @inlinable @inline(__always)
   public func assign<T>(_ expression: Expression<T>) -> AnyExpression {
     AnyExpression(rawValue: "\(self.rawValue) = \(expression)")
+  }
+
+  public func assign(_ value: Value) -> AnyExpression where Value: Encodable {
+    self.assign(Expression(value))
   }
 
   @inlinable @inline(__always)

@@ -1,7 +1,10 @@
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxMacros
 
-struct VueComponentMacro {}
+enum VueComponentMacro {
+  static let qualifiedName = "Component"
+}
 
 extension VueComponentMacro: MemberMacro {
 
@@ -12,10 +15,9 @@ extension VueComponentMacro: MemberMacro {
     in context: some MacroExpansionContext
   ) throws -> [DeclSyntax] {
     guard let structDecl = declaration.as(StructDeclSyntax.self) else {
-      throw MacroExpansionErrorMessage("`@VueComponent` can only be attached to a struct.")
+      throw MacroExpansionErrorMessage("`@\(qualifiedName)` can only be attached to a struct.")
     }
 
-    var members: [DeclSyntax] = []
     var allProps: [TokenSyntax] = []
 
     for member in structDecl.memberBlock.members {
@@ -31,94 +33,25 @@ extension VueComponentMacro: MemberMacro {
         continue
       }
 
-      // members.append(variableDecl)
-
-      guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmed else {
+      guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier else {
         continue
       }
 
-      allProps.append(identifier)
-      members.append(
-        DeclSyntax(
-          VariableDeclSyntax(
-            bindingSpecifier: .keyword(binding.initializer == nil ? .var : .let),
-            bindings: [
-              PatternBindingSyntax(
-                pattern: PatternSyntax(IdentifierPatternSyntax(identifier: identifier.prefixed("$"))),
-                typeAnnotation: binding.typeAnnotation.flatMap {
-                  TypeAnnotationSyntax(type: IdentifierTypeSyntax(name: .identifier("Vue.Expression<\($0.type.trimmed)>")))
-                },
-                initializer: binding.initializer.flatMap {
-                  InitializerClauseSyntax(
-                    value: FunctionCallExprSyntax(
-                      calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Vue.Expression")),
-                      leftParen: .leftParenToken(),
-                      arguments: [
-                        LabeledExprSyntax(
-                          label: "name",
-                          colon: .colonToken(),
-                          expression: StringLiteralExprSyntax(
-                            openingQuote: .stringQuoteToken(),
-                            segments: [.stringSegment(StringSegmentSyntax(content: identifier))],
-                            closingQuote: .stringQuoteToken()
-                          ),
-                          trailingComma: .commaToken()
-                        ),
-                        LabeledExprSyntax(
-                          label: "value",
-                          expression: $0.value
-                        ),
-                      ],
-                      rightParen: .rightParenToken()
-                    )
-                  )
-                },
-                accessorBlock: binding.initializer == nil ?
-                  AccessorBlockSyntax(
-                    accessors: .getter([
-                      CodeBlockItemSyntax(
-                        item: .expr(
-                          ExprSyntax(
-                            FunctionCallExprSyntax(
-                              calledExpression: MemberAccessExprSyntax(
-                                base: DeclReferenceExprSyntax(baseName: .identifier("Vue")),
-                                period: .periodToken(),
-                                name: .identifier("Expression"),
-                              ),
-                              leftParen: .leftParenToken(),
-                              arguments: LabeledExprListSyntax(
-                                [
-                                  LabeledExprSyntax(
-                                    label: "name",
-                                    colon: .colonToken(),
-                                    expression: StringLiteralExprSyntax(
-                                      openingQuote: .stringQuoteToken(),
-                                      segments: [.stringSegment(StringSegmentSyntax(content: identifier))],
-                                      closingQuote: .stringQuoteToken()
-                                    ),
-                                    trailingComma: .commaToken()
-                                  ),
-                                  LabeledExprSyntax(
-                                    label: "value",
-                                    expression: MemberAccessExprSyntax(
-                                      base: DeclReferenceExprSyntax(baseName: .keyword(.`self`)),
-                                      name: identifier.trimmed
-                                    )
-                                  ),
-                                ]
-                              ),
-                              rightParen: .rightParenToken()
-                            )
-                          )
-                        )
-                      )
-                    ])
-                  ) : nil
-              )
-            ]
-          )
-        )
-      )
+      let hasRefAttr = variableDecl.attributes.contains { element in
+        guard case .attribute(let attr) = element else {
+          return false
+        }
+
+        let attributeName = attr.attributeName.trimmedDescription
+
+        return attributeName.starts(with: ReactiveMacro.qualifiedName) || attributeName.starts(with: ReactiveMacro.fullyQualifiedName)
+      }
+
+      guard hasRefAttr else {
+        continue
+      }
+
+      allProps.append(identifier.trimmed)
     }
 
     let allPropsVariable = DeclSyntax(
@@ -126,7 +59,9 @@ extension VueComponentMacro: MemberMacro {
         bindingSpecifier: .keyword(.var),
         bindings: [
           PatternBindingSyntax(
-            pattern: IdentifierPatternSyntax(identifier: .identifier("allProps")),
+            pattern: IdentifierPatternSyntax(
+              identifier: .identifier("allProps")
+            ),
             typeAnnotation: TypeAnnotationSyntax(
               type: MemberTypeSyntax(
                 baseType: IdentifierTypeSyntax(name: .identifier("Vue")),
@@ -166,23 +101,10 @@ extension VueComponentMacro: MemberMacro {
                         arguments: LabeledExprListSyntax(
                           zip(allProps.indices, allProps).compactMap { idx, identifier in
                             LabeledExprSyntax(
-                              expression: TupleExprSyntax(
-                                elements: [
-                                  LabeledExprSyntax(
-                                    expression: StringLiteralExprSyntax(
-                                      openingQuote: .stringQuoteToken(),
-                                      segments: [.stringSegment(StringSegmentSyntax(content: identifier.trimmed))],
-                                      closingQuote: .stringQuoteToken()
-                                    ),
-                                    trailingComma: .commaToken()
-                                  ),
-                                  LabeledExprSyntax(
-                                    expression: MemberAccessExprSyntax(
-                                      base: DeclReferenceExprSyntax(baseName: .keyword(.`self`)),
-                                      name: identifier.trimmed
-                                    )
-                                  ),
-                                ]
+                              expression: MemberAccessExprSyntax(
+                                base: DeclReferenceExprSyntax(baseName: .keyword(.self)),
+                                period: .periodToken(),
+                                name: identifier.prefixed("$")
                               ),
                               trailingComma: allProps.index(after: idx) < allProps.indices.upperBound ? .commaToken() : nil
                             )
@@ -200,7 +122,7 @@ extension VueComponentMacro: MemberMacro {
       ),
     )
 
-    return members + [allPropsVariable]
+    return [allPropsVariable]
   }
 }
 
@@ -212,6 +134,10 @@ extension VueComponentMacro: ExtensionMacro {
     conformingTo protocols: [SwiftSyntax.TypeSyntax],
     in context: some SwiftSyntaxMacros.MacroExpansionContext
   ) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
+    if let inheritanceClause = declaration.inheritanceClause,
+      inheritanceClause.inheritedTypes.contains(where: { ["Vue.\(qualifiedName)", qualifiedName].contains($0.type.trimmedDescription) }) {
+      return []
+    }
     return [
       ExtensionDeclSyntax(
         extensionKeyword: .keyword(.extension),
@@ -221,8 +147,8 @@ extension VueComponentMacro: ExtensionMacro {
             InheritedTypeSyntax(
               type: MemberTypeSyntax(
                 baseType: IdentifierTypeSyntax(name: .identifier("Vue")),
-                period: .periodToken(), 
-                name: .identifier("VueComponent")
+                period: .periodToken(),
+                name: .identifier(qualifiedName)
               )
             )
           ]

@@ -1,10 +1,10 @@
 @_spi(Render) import HTML
 
-public protocol VueComponent: AsyncHTML {
+public protocol Component: AsyncHTML {
   var allProps: Expression<[String: AnyEncodable]> { get }
 }
 
-extension VueComponent {
+extension Component {
   public static func _render<Output: AsyncHTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -23,7 +23,7 @@ extension VueComponent {
   }
 }
 
-extension VueComponent where Self: HTML {
+extension Component where Self: HTML {
   public static func _render<Output: HTMLOutputStream>(
     _ html: consuming Self,
     into output: inout Output
@@ -38,19 +38,6 @@ extension VueComponent where Self: HTML {
         ),
         into: &output
       )
-    }
-  }
-}
-
-@VueComponent
-private struct SampleVueComponent {
-  let isOpen = false
-  let counter = 0
-  let color: String
-
-  var body: some HTML {
-    button(.v.on(.click, !$isOpen)) {
-
     }
   }
 }

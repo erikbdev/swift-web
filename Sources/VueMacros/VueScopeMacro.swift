@@ -31,45 +31,6 @@ extension VueScopeMacro: ExpressionMacro {
       throw MacroExpansionErrorMessage("`#VueScope` requires arguments")
     }
 
-    let expressionObject = FunctionCallExprSyntax(
-      calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Vue.Expression")),
-      leftParen: .leftParenToken(),
-      arguments: LabeledExprListSyntax(
-        zip(allLabeledArguments, allArgumentExpressions)
-          .enumerated()
-          .map { idx, object in
-            LabeledExprSyntax(
-              label: nil,
-              expression: TupleExprSyntax(
-                leftParen: .leftParenToken(),
-                elements: [
-                  LabeledExprSyntax(
-                    expression: StringLiteralExprSyntax(
-                      openingQuote: .stringQuoteToken(),
-                      segments: [
-                        .stringSegment(
-                          StringSegmentSyntax(
-                            leadingTrivia: [.spaces(0)],
-                            content: object.0,
-                            trailingTrivia: [.spaces(0)]
-                          )
-                        )
-                      ],
-                      closingQuote: .stringQuoteToken()
-                    ),
-                    trailingComma: .commaToken()
-                  ),
-                  LabeledExprSyntax(expression: object.1),
-                ],
-                rightParen: .rightParenToken()
-              ),
-              trailingComma: allLabeledArguments.index(after: idx) >= allLabeledArguments.endIndex ? nil : .commaToken()
-            )
-          }
-      ),
-      rightParen: .rightParenToken()
-    )
-
     let allExpressions = zip(allLabeledArguments, allArgumentExpressions)
       .map { identifier, expression in
         CodeBlockItemSyntax(
@@ -111,7 +72,7 @@ extension VueScopeMacro: ExpressionMacro {
                             label: "value",
                             colon: .colonToken(),
                             expression: expression
-                          )
+                          ),
                         ],
                         rightParen: .rightParenToken()
                       )
@@ -126,35 +87,64 @@ extension VueScopeMacro: ExpressionMacro {
 
     return ExprSyntax(
       FunctionCallExprSyntax(
-        calledExpression: DeclReferenceExprSyntax(
-          baseName: .identifier("div")
-        ),
-        leftParen: .leftParenToken(),
-        arguments: [
-          LabeledExprSyntax(
-            label: nil,
+        calledExpression: ClosureExprSyntax {
+          allExpressions
+          ReturnStmtSyntax(
+            returnKeyword: .keyword(.return),
             expression: FunctionCallExprSyntax(
-              calledExpression: MemberAccessExprSyntax(
-                base: MemberAccessExprSyntax(
-                  base: ExprSyntax?.none,
-                  period: .periodToken(),
-                  declName: DeclReferenceExprSyntax(baseName: .identifier("v"))
-                ),
-                period: .periodToken(),
-                declName: DeclReferenceExprSyntax(baseName: .identifier("scope"))
+              calledExpression: DeclReferenceExprSyntax(
+                baseName: .identifier("div")
               ),
               leftParen: .leftParenToken(),
               arguments: [
-                LabeledExprSyntax(label: nil, expression: expressionObject)
+                LabeledExprSyntax(
+                  label: nil,
+                  expression: FunctionCallExprSyntax(
+                    calledExpression: MemberAccessExprSyntax(
+                      base: MemberAccessExprSyntax(
+                        base: ExprSyntax?.none,
+                        period: .periodToken(),
+                        declName: DeclReferenceExprSyntax(baseName: .identifier("v"))
+                      ),
+                      period: .periodToken(),
+                      declName: DeclReferenceExprSyntax(baseName: .identifier("scope"))
+                    ),
+                    leftParen: .leftParenToken(),
+                    arguments: [
+                      LabeledExprSyntax(
+                        label: nil,
+                        expression: FunctionCallExprSyntax(
+                          calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Vue.Expression")),
+                          leftParen: .leftParenToken(),
+                          arguments: LabeledExprListSyntax(
+                            allLabeledArguments
+                              .enumerated()
+                              .map { idx, identifier in
+                                LabeledExprSyntax(
+                                  label: nil,
+                                  expression: DeclReferenceExprSyntax(baseName: identifier),
+                                  trailingComma: allLabeledArguments.index(after: idx) >= allLabeledArguments.endIndex ? nil : .commaToken()
+                                )
+                              }
+                          ),
+                          rightParen: .rightParenToken()
+                        )
+                      )
+                    ],
+                    rightParen: .rightParenToken()
+                  )
+                )
               ],
-              rightParen: .rightParenToken()
+              rightParen: .rightParenToken(),
+              trailingClosure: ClosureExprSyntax(
+                statements: originalClosure.statements
+              )
             )
           )
-        ],
-        rightParen: .rightParenToken(),
-        trailingClosure: ClosureExprSyntax(
-          statements: allExpressions + originalClosure.statements
-        )
+        },
+        leftParen: .leftParenToken(),
+        arguments: [],
+        rightParen: .rightParenToken()
       )
     )
   }
