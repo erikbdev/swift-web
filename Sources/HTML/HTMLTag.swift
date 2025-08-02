@@ -57,7 +57,7 @@ public struct HTMLTag: Hashable, Sendable, ExpressibleByStringLiteral {
   ) -> HTMLAttributes<HTMLElement<Content>> {
     HTMLAttributes(
       attributes: OrderedSet(attributes),
-      content: HTMLElement(tag: rawValue, content: content),
+      content: HTMLElement(tag: rawValue, content: content)
     )
   }
 
@@ -230,7 +230,7 @@ public func script(
     attributes: OrderedSet(attributes),
     content: tag("script") {
       HTMLRaw(text)
-    },
+    }
   )
 }
 public var section: HTMLTag { #function }

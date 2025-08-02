@@ -14,7 +14,7 @@ struct VueScopeTests {
   }
 
   @Vue.Component
-  struct ButtonLanguage: HTML {
+  public struct ButtonLanguage: HTML {
     @Vue.Reactive let codeLang = CodeLang.swift
 
     var name = "john"
@@ -34,7 +34,14 @@ struct VueScopeTests {
 
     var body: some HTML {
       button(.v.on(.click, $codeLang.assign(.rust))) {
-        "Language \($codeLang)"
+          HydrateComponent{ context in
+            switch context {
+              case .hydrated: 
+                "Language \($codeLang)"
+              case .static: 
+                "Language \(codeLang.rawValue)"
+            }
+          }
       }
     }
   }
@@ -54,14 +61,18 @@ struct VueScopeTests {
   }
 
   @Test func vueScopeTestWithHydration() {
-    let scope = #VueScope(CodeLang.swift) { codeLang in
-      button(.v.on(.click, codeLang.assign(.rust))) {
-        HydrateComponent { context in
-          switch context {
-            case .client: 
-              "Language \(codeLang)"
-            case .server: 
-              "Language \(codeLang.initialValue.rawValue)"
+    let scope = withDependencies {
+      $0.base62Generator = Base62Generator { _ in "123456" }
+    } operation: {
+      #VueScope(CodeLang.swift) { codeLang in
+        button(.v.on(.click, codeLang.assign(.rust))) {
+          HydrateComponent{ context in
+            switch context {
+              case .hydrated: 
+                "Language \(codeLang)"
+              case .static: 
+                "Language \(codeLang.initialValue.rawValue)"
+            }
           }
         }
       }
@@ -69,7 +80,7 @@ struct VueScopeTests {
 
     #expect(
       scope.render() == """
-        <div v-scope="{&quot;codeLang&quot;:&quot;swift&quot;}"><button v-on:click="codeLang = &quot;rust&quot;">Language {{ codeLang }}</button></div>
+        <div v-scope="{&quot;codeLang&quot;:&quot;swift&quot;}"><button v-on:click="codeLang = &quot;rust&quot;"><div v-hydrate-id="123456">Language swift</div><div hidden v-effect="document.querySelector('[v-hydrate-id="123456"]').remove(); $el.hidden = false">Language {{ codeLang }}</div></button></div>
         """
     )
   }
@@ -87,7 +98,7 @@ struct VueScopeTests {
 
     #expect(
       html.render() == """
-        <div v-scope="{&quot;codeLang&quot;:&quot;swift&quot;}"><button v-on:click="codeLang = &quot;rust&quot;">Language {{ codeLang }}</button></div>
+        <div v-scope="{&quot;codeLang&quot;:&quot;swift&quot;}"><button v-on:click="codeLang = &quot;rust&quot;"><div v-hydrate-id="123456">Language swift</div><div hidden v-effect="document.querySelector('[v-hydrate-id="123456"]').remove(); $el.hidden = false">Language {{ codeLang }}</div></button></div>
         """
     )
   }

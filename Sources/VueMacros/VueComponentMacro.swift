@@ -56,6 +56,7 @@ extension VueComponentMacro: MemberMacro {
 
     let allPropsVariable = DeclSyntax(
       VariableDeclSyntax(
+        modifiers: structDecl.modifiers.contains { $0.trimmedDescription == TokenSyntax.keyword(.public).trimmedDescription } ? [DeclModifierSyntax(name: .keyword(.public))] : [],
         bindingSpecifier: .keyword(.var),
         bindings: [
           PatternBindingSyntax(
@@ -78,7 +79,7 @@ extension VueComponentMacro: MemberMacro {
                         value: MemberTypeSyntax(
                           baseType: IdentifierTypeSyntax(name: .identifier("Vue")),
                           name: .identifier("AnyEncodable")
-                        ),
+                        )
                       )
                     )
                   ],
@@ -95,7 +96,7 @@ extension VueComponentMacro: MemberMacro {
                         calledExpression: MemberAccessExprSyntax(
                           base: DeclReferenceExprSyntax(baseName: .identifier("Vue")),
                           period: .periodToken(),
-                          name: .identifier("Expression"),
+                          name: .identifier("Expression")
                         ),
                         leftParen: .leftParenToken(),
                         arguments: LabeledExprListSyntax(
@@ -119,7 +120,7 @@ extension VueComponentMacro: MemberMacro {
             )
           )
         ]
-      ),
+      )
     )
 
     return [allPropsVariable]

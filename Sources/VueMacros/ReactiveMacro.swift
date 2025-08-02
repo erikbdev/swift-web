@@ -32,6 +32,7 @@ extension ReactiveMacro: PeerMacro {
     return [
       DeclSyntax(
         VariableDeclSyntax(
+          modifiers: variableDecl.modifiers,
           bindingSpecifier: .keyword(binding.initializer == nil ? .var : .let),
           bindings: [
             PatternBindingSyntax(
@@ -88,7 +89,7 @@ extension ReactiveMacro: PeerMacro {
                             calledExpression: MemberAccessExprSyntax(
                               base: DeclReferenceExprSyntax(baseName: .identifier("Vue")),
                               period: .periodToken(),
-                              name: .identifier("Expression"),
+                              name: .identifier("Expression")
                             ),
                             leftParen: .leftParenToken(),
                             arguments: LabeledExprListSyntax(

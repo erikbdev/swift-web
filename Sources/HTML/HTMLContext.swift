@@ -23,6 +23,11 @@ public struct HTMLContext: Sendable {
     let indentation: String
     let newLine: String
 
+    public init(indentation: String, newLine: String) {
+      self.indentation = indentation
+      self.newLine = newLine
+    }
+
     public static let minified = Self(indentation: "", newLine: "")
     public static let pretty = Self(indentation: "  ", newLine: "\n")
   }

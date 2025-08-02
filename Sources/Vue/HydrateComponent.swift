@@ -1,19 +1,27 @@
+import Dependencies
+// import DependenciesMacros
+import Foundation
 @_spi(Render) import HTML
 
 public enum HydrateContext: Hashable, Sendable {
-    case client
-    case server
+  case hydrated
+  case `static`
 }
+
+private let randomCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 public struct HydrateComponent<Content: AsyncHTML>: AsyncHTML {
   let content: @Sendable (HydrateContext) -> Content
+  let generation: String
 
   public init(@HTMLBuilder content: @escaping @Sendable (HydrateContext) -> Content) {
+    @Dependency(\.base62Generator) var generator
     self.content = content
+    self.generation = generator(8)
   }
 
   public init<Awaitable: AsyncHTML>(@HTMLBuilder content: @escaping @Sendable (HydrateContext) async throws -> Awaitable) where Content == AsyncHTMLContent<Awaitable> {
-    self.content = { context in
+    self.init { context in
       AsyncHTMLContent {
         try await content(context)
       }
@@ -21,14 +29,15 @@ public struct HydrateComponent<Content: AsyncHTML>: AsyncHTML {
   }
 
   public var body: HTMLTuple<HTMLAttributes<HTMLElement<Content>>, HTMLAttributes<HTMLElement<Content>>> {
-    template {
-      content(.client)
-    }
-    .attribute("v-cloak")
     div {
-      content(.server)
+      content(.static)
     }
-    .attribute("v-effect", value: "$el.previousElementSibling.getAttribute(\"v-cloak\") == null && $el.setAttribute(\"hidden\", \"\")")
+    .attribute("v-hydrate-id", value: generation)
+    div {
+      content(.hydrated)
+    }
+    .attribute("hidden")
+    .attribute("v-effect", value: "document.querySelector('[v-hydrate-id=\"\(generation)\"]').remove(); $el.hidden = false")
   }
 }
 

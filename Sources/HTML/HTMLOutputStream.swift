@@ -22,28 +22,44 @@ extension HTMLOutputStream {
 
 extension AsyncHTML {
   @inline(__always)
-  public consuming func render() async throws -> String {
-    var bytes = _HTMLBuffer()
-    try await Self._render(self, into: &bytes)
-    return String(decoding: bytes.bytes, as: UTF8.self)
+  public consuming func render(_ config: HTMLContext.Configuration = .minified) async throws -> String {
+    try await withDependencies {
+      $0.htmlContext = HTMLContext(config)
+    } operation: { [self] in
+      var bytes = _HTMLBuffer()
+      try await Self._render(self, into: &bytes)
+      return String(decoding: bytes.bytes, as: UTF8.self)
+    }
   }
 
   @inline(__always)
-  public consuming func render<Output: AsyncHTMLOutputStream>(into output: inout Output) async throws {
-    try await Self._render(self, into: &output)
+  public consuming func render<Output: AsyncHTMLOutputStream>(_ config: HTMLContext.Configuration = .minified, into output: inout Output) async throws {
+    try await withDependencies {
+      $0.htmlContext = HTMLContext(config)
+    } operation: { [self] in
+      try await Self._render(self, into: &output)
+    }
   }
 }
 
 extension HTML {
   @inline(__always)
-  public consuming func render() -> String {
-    var bytes = _HTMLBuffer()
-    Self._render(self, into: &bytes)
-    return String(decoding: bytes.bytes, as: UTF8.self)
+  public consuming func render(_ config: HTMLContext.Configuration = .minified) -> String {
+    withDependencies {
+      $0.htmlContext = HTMLContext(config)
+    } operation: { [self] in
+      var bytes = _HTMLBuffer()
+      Self._render(self, into: &bytes)
+      return String(decoding: bytes.bytes, as: UTF8.self)
+    }
   }
 
   @inline(__always)
-  public consuming func render<Output: HTMLOutputStream>(into output: inout Output) {
-    Self._render(self, into: &output)
+  public consuming func render<Output: HTMLOutputStream>(_ config: HTMLContext.Configuration = .minified, into output: inout Output) {
+    withDependencies {
+      $0.htmlContext = HTMLContext(config)
+    } operation: { [self] in
+      Self._render(self, into: &output)
+    }
   }
 }
