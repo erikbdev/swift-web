@@ -82,7 +82,7 @@ extension HTMLInlineStyle: HTML where Content: HTML {
 
 extension HTMLInlineStyle: Sendable where Content: Sendable {}
 
-extension HTML {
+extension AsyncHTML {
   public func inlineStyle(
     _ property: String,
     _ value: String?,
