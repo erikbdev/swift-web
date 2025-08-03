@@ -47,7 +47,7 @@ extension HTMLContext: TestDependencyKey {
 }
 
 extension DependencyValues {
-  public package(set) var htmlContext: HTMLContext {
+  public var htmlContext: HTMLContext {
     get { self[HTMLContext.self] }
     set { self[HTMLContext.self] = newValue }
   }
