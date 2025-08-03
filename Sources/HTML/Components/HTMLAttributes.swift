@@ -80,7 +80,7 @@ extension HTMLAttributes: HTML where Content: HTML {
 
 extension HTMLAttributes: Sendable where Content: Sendable {}
 
-extension HTML {
+extension AsyncHTML {
   public func attribute(
     _ name: String,
     value: String? = "",

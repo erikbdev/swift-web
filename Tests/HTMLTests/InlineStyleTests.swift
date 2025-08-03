@@ -83,7 +83,7 @@ struct InlineStyleTests {
 
   @Test func sameStyleGroupedClasses() {
     let (html, stylesheet) = withDependencies {
-      $0.htmlContext.styles = .groupedStyles
+      $0.htmlContext.styles = .groupStyles
     } operation: {
       @Dependency(\.htmlContext) var context
       return (
@@ -105,7 +105,7 @@ struct InlineStyleTests {
 
   @Test func diffStyleGroupedClasses() {
     let (html, stylesheet) = withDependencies {
-      $0.htmlContext.styles = .groupedStyles
+      $0.htmlContext.styles = .groupStyles
     } operation: {
       @Dependency(\.htmlContext) var context
       return (
@@ -127,7 +127,7 @@ struct InlineStyleTests {
 
   @Test func mediaGroupedClass() {
     let (html, stylesheet) = withDependencies {
-      $0.htmlContext.styles = .groupedStyles
+      $0.htmlContext.styles = .groupStyles
     } operation: {
       @Dependency(\.htmlContext) var context
       return (

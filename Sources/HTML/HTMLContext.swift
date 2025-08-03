@@ -23,7 +23,10 @@ public struct HTMLContext: Sendable {
     let indentation: String
     let newLine: String
 
-    public init(indentation: String, newLine: String) {
+    public init(
+      indentation: String, 
+      newLine: String
+    ) {
       self.indentation = indentation
       self.newLine = newLine
     }
@@ -44,7 +47,7 @@ extension HTMLContext: TestDependencyKey {
 }
 
 extension DependencyValues {
-  public var htmlContext: HTMLContext {
+  public package(set) var htmlContext: HTMLContext {
     get { self[HTMLContext.self] }
     set { self[HTMLContext.self] = newValue }
   }
@@ -70,7 +73,7 @@ extension HTMLContext.StyleSheetGenerator {
     }
   }
 
-  public static var groupedStyles: Self {
+  public static var groupStyles: Self {
     let usedStyles = LockIsolated<OrderedDictionary<String, OrderedSet<InlineStyle>>>([:])
 
     return Self(
