@@ -69,10 +69,10 @@ struct TypedAssetsCLI: ParsableCommand {
   }
 
   private static func recursive(_ url: URL) -> FileOrDir {
-    var isDirectory = false
+    var isDirectory: ObjCBool = false
     _ = FileManager.default.fileExists(atPath: url.path(), isDirectory: &isDirectory)
 
-    guard isDirectory else {
+    guard isDirectory.boolValue else {
       return .file(
         canonical: url.deletingPathExtension().lastPathComponent,
         ext: url.pathExtension.isEmpty ? nil : url.pathExtension,

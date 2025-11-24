@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0.3
+// swift-tools-version: 6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import CompilerPluginSupport
 
 let package = Package(
   name: "swift-web",
-  platforms: [.macOS(.v12)],
+  platforms: [.macOS(.v14)],
   products: [
     .library(name: "HTML", targets: ["HTML"]),
     .library(name: "Vue", targets: ["Vue"]),
